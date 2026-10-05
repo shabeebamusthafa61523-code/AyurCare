@@ -42,9 +42,13 @@ const useLockBodyScroll = (isOpen = true) => {
 };
 const ROLES = [
   { id: "0", name: "superadmin" },
-  { id: "1", name: "hr" },
-  { id: "2", name: "admin" },
-  { id: "3", name: "employee" }
+  { id: "1", name: "admin" },
+  { id: "2", name: "doctor" },
+  { id: "3", name: "nurse" },
+  { id: "4", name: "receptionist" },
+  { id: "5", name: "pharmacist" },
+  { id: "6", name: "lab_technician" },
+  { id: "7", name: "employee" }
 ];
 
 const ALL_SIDEBAR_ITEMS = [
@@ -672,7 +676,7 @@ const Users = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Nexus Staff Portal</span>
             </div> */}
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 italic tracking-tighter leading-none">
-              EMPLOYEE <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-lime-400">LIST</span>
+              CLINIC STAFF & <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-400 dark:to-teal-300">DOCTORS</span>
             </h1>
           </div>
 
@@ -681,21 +685,21 @@ const Users = () => {
               type="button"
               onClick={() => setShowKpiAnalytics(prev => !prev)}
               className={`group flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold text-[12px] uppercase tracking-wider transition-all duration-300 shadow-md cursor-pointer ${showKpiAnalytics
-                  ? 'bg-indigo-600 text-white shadow-indigo-600/30 ring-2 ring-indigo-400'
+                  ? 'bg-emerald-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-400'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
             >
-              <BarChart3 size={16} className={showKpiAnalytics ? 'animate-bounce text-white' : 'text-indigo-500'} />
+              <BarChart3 size={16} className={showKpiAnalytics ? 'animate-bounce text-white' : 'text-emerald-500'} />
               <span>{showKpiAnalytics ? 'Hide KPI Analytics' : 'KPI Analytics'}</span>
             </button>
 
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="group relative flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-slate-900 text-white dark:text-slate-100 border border-transparent dark:border-slate-800 shadow-lg hover:shadow-indigo-500/20 dark:hover:shadow-none rounded-full font-bold text-[12px] uppercase tracking-wider transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] overflow-hidden cursor-pointer"
+              className="group relative flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 dark:bg-slate-900 text-white dark:text-slate-100 border border-transparent dark:border-slate-800 shadow-lg hover:shadow-emerald-500/20 dark:hover:shadow-none rounded-full font-bold text-[12px] uppercase tracking-wider transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] overflow-hidden cursor-pointer"
             >
-              <div className="absolute inset-0 bg-indigo-700 dark:bg-lime-500/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <div className="absolute inset-0 bg-emerald-700 dark:bg-emerald-500/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               <Plus size={16} className="relative z-10" />
-              <span className="relative z-10">Add Employee</span>
+              <span className="relative z-10">Add Clinic Staff</span>
             </button>
           </div>
         </header>
@@ -1416,22 +1420,25 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
         <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors"><X size={20} /></button>
 
         <header className="mb-6">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic uppercase tracking-tighter">ADD <span className="text-indigo-600 dark:text-indigo-400">EMPLOYEE FILE</span></h2>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic uppercase tracking-tighter">ADD <span className="text-emerald-600 dark:text-emerald-400">CLINIC STAFF & DOCTOR</span></h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Register new doctors, specialists, nurses, receptionists, pharmacists, lab technicians, and clinic personnel.
+          </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1 scrollbar-thin">
           {/* Input fields — 3-Column Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Employee ID</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Staff / Doctor ID</label>
               <input required name="employeeId" className="w-full text-xs py-2" value={form.employeeId} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Full Name</label>
-              <input required name="name" className="w-full text-xs py-2" placeholder="NAME" value={form.name} onChange={handleInputChange} />
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Full Staff Name</label>
+              <input required name="name" className="w-full text-xs py-2" placeholder="e.g. Dr. Rajesh Gupta" value={form.name} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Phone Number</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Phone Number</label>
               <input
                 required
                 name="phone"
@@ -1439,7 +1446,7 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
                 maxLength={10}
                 className={`w-full border rounded-xl px-3 py-2 text-xs outline-none transition focus:ring-1 ${form.phone && form.phone.length !== 10
                     ? 'border-red-400 focus:ring-red-400'
-                    : 'border-slate-200 dark:border-slate-700 focus:ring-indigo-500 bg-white dark:bg-slate-900 text-slate-850 dark:text-white'
+                    : 'border-slate-200 dark:border-slate-700 focus:ring-emerald-500 bg-white dark:bg-slate-900 text-slate-850 dark:text-white'
                   }`}
                 placeholder="10-digit number"
                 value={form.phone}
@@ -1453,11 +1460,11 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
               )}
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Corporate Email</label>
-              <input required type="email" name="email" className="w-full text-xs py-2" placeholder="EMAIL" value={form.email} onChange={handleInputChange} />
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Email Address</label>
+              <input required type="email" name="email" className="w-full text-xs py-2" placeholder="staff@polyclinic.com" value={form.email} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Corporate Designation</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Healthcare Designation / Specialization</label>
               <DesignationSelect
                 value={form.designation}
                 onChange={(designation) => setForm(prev => ({ ...prev, designation }))}
@@ -1470,15 +1477,15 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Department Assignment</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Clinic Department / OPD Unit</label>
               <select
                 required
                 name="departmentId"
                 value={form.departmentId}
                 onChange={handleInputChange}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 dark:focus:border-emerald-400 cursor-pointer"
               >
-                <option value="" disabled>SELECT DEPARTMENT</option>
+                <option value="" disabled>SELECT CLINIC DEPARTMENT</option>
                 {departments.map((dept) => (
                   <option key={dept._id || dept.id} value={dept._id || dept.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
                     {dept.name.toUpperCase()}
@@ -1487,11 +1494,11 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Reporting Manager</label>
-              <input required name="reportingManager" className="w-full text-xs py-2" placeholder="MANAGER" value={form.reportingManager} onChange={handleInputChange} />
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Reporting Lead / Head Doctor</label>
+              <input required name="reportingManager" className="w-full text-xs py-2" placeholder="SUPERVISOR" value={form.reportingManager} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">System Status</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Account Status</label>
               <select name="status" className="w-full text-xs py-2" value={form.status} onChange={handleInputChange}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -1499,7 +1506,7 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">System Role</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Clinic Role & Access Level</label>
               <select name="role" className="w-full text-xs py-2" value={form.role} onChange={handleInputChange}>
                 {ROLES.map(r => (
                   <option key={r.id} value={r.name}>{r.name.toUpperCase()}</option>
@@ -1507,54 +1514,54 @@ const CreateModal = ({ onClose, refresh, getAuthHeaders, designations, onDesigna
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Monthly Salary</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Monthly Salary / Retainer Fee (₹)</label>
               <input name="salary" type="number" className="w-full text-xs py-2" placeholder="SALARY" value={form.salary} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Joining Date</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Date of Joining</label>
               <input required name="joining_date" type="date" className="w-full text-xs py-2" value={form.joining_date} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Identity Type</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Identity Verification Type</label>
               <select name="identityType" className="w-full text-xs py-2" value={form.identityType} onChange={handleInputChange}>
                 <option value="aadhaar">Aadhaar</option>
                 <option value="pan">PAN</option>
                 <option value="passport">Passport</option>
-                <option value="driving_license">Driving License</option>
+                <option value="driving_license">Medical License / Registration</option>
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">ID Number</label>
-              <input required name="identityNumber" className="w-full text-xs py-2" placeholder="ID NUMBER" value={form.identityNumber} onChange={handleInputChange} />
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">License / ID Number</label>
+              <input required name="identityNumber" className="w-full text-xs py-2" placeholder="REGISTRATION NUMBER" value={form.identityNumber} onChange={handleInputChange} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Profile Photo</label>
-              <div className="relative group flex items-center gap-2 w-full border border-dashed border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 bg-slate-50 dark:bg-slate-900 hover:border-indigo-500 transition-all cursor-pointer">
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Profile Photo</label>
+              <div className="relative group flex items-center gap-2 w-full border border-dashed border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 bg-slate-50 dark:bg-slate-900 hover:border-emerald-500 transition-all cursor-pointer">
                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer w-full" onChange={handleAvatarChange} />
                 {preview ? (
                   <img src={preview} className="w-7 h-7 rounded-lg object-cover shrink-0" alt="preview" />
                 ) : (
-                  <ImageIcon size={14} className="text-slate-400 group-hover:text-indigo-500 shrink-0" />
+                  <ImageIcon size={14} className="text-slate-400 group-hover:text-emerald-500 shrink-0" />
                 )}
                 <span className="text-[10px] text-slate-400 truncate">{preview ? 'Photo selected' : 'Click to upload · JPG/PNG'}</span>
               </div>
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-black uppercase text-indigo-500 dark:text-indigo-400 tracking-wider block ml-1">Residential Address</label>
+              <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block ml-1">Residential Address</label>
               <input name="address" className="w-full text-xs py-2" placeholder="Address" value={form.address} onChange={handleInputChange} />
             </div>
           </div>
 
           <button
             disabled={isSubmitting}
-            className="w-full py-4 bg-indigo-600 dark:bg-indigo-500 text-white dark:text-slate-900 dark:font-black font-bold rounded-2xl uppercase text-[11px] tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.005] active:scale-[0.99]"
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl uppercase text-[11px] tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
           >
             {isSubmitting ? (
               <Loader2 size={15} className="animate-spin" />
             ) : (
               <CheckCircle2 size={15} />
             )}
-            Add Employee
+            Add Clinic Staff & Doctor
           </button>
           <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center italic mt-1.5 flex items-center justify-center gap-1">
             <KeyRound size={12} className="text-indigo-500 shrink-0" />

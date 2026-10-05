@@ -64,118 +64,62 @@ import {
   UsersRound,
   UserCog,
   BookCheck,
+  Stethoscope,
+  Activity,
   X
 } from 'lucide-react';
 
 const CATEGORY_ORDER = [
-  'Overview',
-  'Dashboards',
-  'People & HR',
-  'Sales & CRM',
-  'Marketing & Work',
-  'Finance & Payroll',
-  'Academy & LMS',
-  'Reports',
-  'Daily Operations'
+  'Overview & Queue',
+  'Patient CRM & Booking',
+  'Clinical EMR & Lab',
+  'Pharmacy & Billing',
+  'Staff & Doctors',
+  'Reports & Operations'
 ];
 
 const CATEGORY_CONFIG = {
-  'Overview': { label: 'Overview', icon: LayoutDashboard },
-  'Dashboards': { label: 'Dashboards', icon: LayoutDashboard },
-  'People & HR': { label: 'People & HR', icon: Users },
-  'Sales & CRM': { label: 'Sales & CRM', icon: Target },
-  'Marketing & Work': { label: 'Marketing & Work', icon: Megaphone },
-  'Finance & Payroll': { label: 'Finance & Payroll', icon: Wallet },
-  'Academy & LMS': { label: 'Academy & LMS', icon: GraduationCap },
-  'Reports': { label: 'Reports', icon: BarChart3 },
-  'Daily Operations': { label: 'Daily Operations', icon: Clock }
+  'Overview & Queue': { label: 'Overview & Queue', icon: LayoutDashboard },
+  'Patient CRM & Booking': { label: 'Patient CRM & Booking', icon: PhoneCall },
+  'Clinical EMR & Lab': { label: 'Clinical EMR & Lab', icon: Stethoscope },
+  'Pharmacy & Billing': { label: 'Pharmacy & Billing', icon: Wallet },
+  'Staff & Doctors': { label: 'Staff & Doctors', icon: Users },
+  'Reports & Operations': { label: 'Reports & Operations', icon: BarChart3 }
 };
 
 const menuItems = [
-  // --- OVERVIEW ---
-  { icon: CheckCircle2, label: 'Approvals', path: '/approvals', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'management'] },
-  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview' },
-  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview' },
+  // --- OVERVIEW & QUEUE ---
+  { icon: LayoutDashboard, label: 'Polyclinic Dashboard', path: '/polyclinic-dashboard', category: 'Overview & Queue' },
+  { icon: UserCheck, label: 'Reception Queue', path: '/reception-queue', category: 'Overview & Queue' },
+  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview & Queue' },
+  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview & Queue' },
 
-  // --- DASHBOARDS ---
-  { icon: LayoutDashboard, label: 'Admin Dashboard', path: '/dashboard', category: 'Dashboards', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin'] },
-  { icon: TrendingUp, label: 'MD Dashboard', path: '/md-dashboard', category: 'Dashboards', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'management'] },
-  { icon: UserCog, label: 'HR Dashboard', path: '/hr-dashboard', category: 'Dashboards', allowedDesignationNames: ['hr', 'recruiter'] },
-  { icon: Target, label: 'Lead Dashboard', path: '/lead-dashboard', category: 'Dashboards', allowedRoles: ['1', '2', '3', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl'], allowedDepartmentNames: ['counselor', 'sales', 'ops', 'marketing'], allowedDesignationNames: ['counselor', 'telecaller', 'ops'] },
-  { icon: Megaphone, label: 'Marketing Dashboard', path: '/marketing-dashboard', category: 'Dashboards', allowedRoles: ['1', '2', '3', '10', 'hr', 'admin', 'superadmin', 'marketing', 'manager', 'team_lead', 'teamlead', 'tl'], allowedDepartmentNames: ['marketing', 'digital'] },
-  { icon: Video, label: 'Video Dashboard', path: '/videographer-dashboard', category: 'Dashboards', allowedDesignationNames: ['video', 'editor', 'media'] },
-  { icon: Palette, label: 'GD Dashboard', path: '/graphic-designer-dashboard', category: 'Dashboards', allowedDesignationNames: ['graphic', 'designer', 'ui', 'ux'] },
-  { icon: Code2, label: 'Dev Dashboard', path: '/developer-dashboard', category: 'Dashboards', allowedDepartmentNames: ['r&d', 'dev', 'developer', 'development'] },
-  { icon: GraduationCap, label: 'Counselor Dashboard', path: '/counselor-dashboard', category: 'Dashboards', allowedDesignationNames: ['counselor', 'academic', 'tele'] },
-  { icon: Wallet, label: 'Accountant Dashboard', path: '/accountant-dashboard', category: 'Dashboards', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['accounts', 'finance'], allowedDesignationNames: ['accountant', 'accounts', 'finance'] },
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/common-dashboard', category: 'Dashboards', isCommonDashboardFallback: true },
+  // --- PATIENT CRM & BOOKING ---
+  { icon: PhoneCall, label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Patient CRM & Booking' },
+  { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Patient CRM & Booking' },
+  { icon: Clock, label: 'Patient Follow-ups', path: '/patient-followups', category: 'Patient CRM & Booking' },
 
-  // --- PEOPLE & HR ---
-  { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'People & HR' },
-  { icon: UserCheck, label: 'Recruitment', path: '/recruitment', category: 'People & HR', allowedRoles: ['0', '1', '2', '3', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'recruiter'], allowedDesignationNames: ['hr', 'recruiter', 'admin', 'manager'] },
-  { icon: Users, label: 'Users', path: '/users', category: 'People & HR', allowedRoles: ['1', '2', 'hr', 'admin'], allowedDepartmentNames: ['hr', 'admin'] },
-  { icon: Building, label: 'Departments', path: '/departments', category: 'People & HR', allowedRoles: ['1', '2', 'hr', 'admin'] },
-  { icon: ShieldCheck, label: 'Sidebar Permissions', path: '/sidebar-permissions', category: 'People & HR', allowedRoles: ['0', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin'] },
-  { icon: BookOpenCheck, label: 'Employee Training', path: '/hr/training', category: 'People & HR', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin'] },
+  // --- CLINICAL EMR & LAB ---
+  { icon: Stethoscope, label: 'Doctor EMR Consultation', path: '/doctor-emr', category: 'Clinical EMR & Lab' },
+  { icon: FileText, label: 'Digital Prescriptions', path: '/prescriptions', category: 'Clinical EMR & Lab' },
+  { icon: Activity, label: 'Laboratory & Diagnostics', path: '/laboratory', category: 'Clinical EMR & Lab' },
 
-  // --- SALES & CRM ---
-  { icon: PhoneCall, label: 'Student Leads', path: '/leads-telecaller', category: 'Sales & CRM', allowedDesignationNames: ['counselor', 'telecaller', 'ops'], allowedRoles: ['1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin'] },
-  { icon: Briefcase, label: 'Client Leads', path: '/client-leads', category: 'Sales & CRM', allowedRoles: ['1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead'] },
-  { icon: Building2, label: 'Clients', path: '/clients', category: 'Sales & CRM', allowedRoles: ['1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead'] },
+  // --- PHARMACY & BILLING ---
+  { icon: Tag, label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Pharmacy & Billing' },
+  { icon: Receipt, label: 'Billing & Invoices', path: '/billing', category: 'Pharmacy & Billing' },
+  { icon: Wallet, label: 'Clinic Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing' },
+  { icon: CreditCard, label: 'Payslips', path: '/payslips', category: 'Pharmacy & Billing' },
 
-  // --- MARKETING & WORK ---
-  { icon: Calendar, label: 'Content Calendar', path: '/calendar-work', category: 'Marketing & Work' },
-  { icon: FolderKanban, label: 'Projects', path: '/projects', category: 'Marketing & Work', allowedRoles: ['1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead'] },
+  // --- STAFF & DOCTORS ---
+  { icon: UserCog, label: 'Doctors & Staff', path: '/doctors-staff', category: 'Staff & Doctors' },
+  { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'Staff & Doctors' },
+  { icon: Users, label: 'Users & Roles', path: '/users', category: 'Staff & Doctors' },
+  { icon: Building, label: 'Departments', path: '/departments', category: 'Staff & Doctors' },
 
-  // --- FINANCE & PAYROLL ---
-  { icon: Wallet, label: 'Accounts', path: '/accounts', category: 'Finance & Payroll', children: [
-      { icon: Coins, label: 'Capital', path: '/accounts/capital' },
-      { icon: TrendingUp, label: 'Sales', path: '/accounts/sales' },
-      { icon: ShoppingBag, label: 'Income', path: '/accounts/income' },
-      { icon: ShoppingCart, label: 'Purchase', path: '/accounts/purchase' },
-      { icon: Tag, label: 'Expense Categories', path: '/accounts/categories' },
-      { icon: PlusCircle, label: 'Expense', path: '/accounts/expenses' },
-      { icon: DollarSign, label: 'Salary Payment', path: '/accounts/salary' },
-      { icon: BookCheck, label: 'Cash & Bank', path: '/accounts/cash-book' },
-      { icon: Layers, label: 'Operation', path: '/accounts/operation' },
-      { icon: BarChart3, label: 'Profit and Loss', path: '/accounts/reports' }
-    ]
-  },
-  { icon: TrendingUp, label: 'Income', path: '/accounts/income', category: 'Finance & Payroll', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
-  { icon: Receipt, label: 'Payslips', path: '/payslips', category: 'Finance & Payroll', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
-  { icon: CreditCard, label: 'Personal Payslip', path: '/my-payslip', category: 'Finance & Payroll' },
-
-  // --- ACADEMY & LMS ---
-  { icon: BookOpen, label: 'Course Management', path: '/academy/courses', category: 'Academy & LMS', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin', 'academy', 'academic'] },
-  { icon: Layers, label: 'Batches', path: '/academy/batches', category: 'Academy & LMS', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin', 'academy', 'academic'] },
-  { icon: School, label: 'Enrollment Tracking', path: '/academy/enrollments', category: 'Academy & LMS', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin', 'academy', 'academic'] },
-  { icon: BookOpenCheck, label: 'Training LMS', path: '/training-lms', category: 'Academy & LMS' },
-  { icon: GraduationCap, label: 'My LMS Learning', path: '/academy/learning', category: 'Academy & LMS' },
-  { icon: Clipboard, label: 'Student Attendance', path: '/student-attendance', category: 'Academy & LMS', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin', 'academy', 'academic'] },
-
-  // --- REPORTS ---
-  { icon: ClipboardCheck, label: 'HR Shift Report', path: '/hr-report', category: 'Reports', allowedDesignationNames: ['hr', 'recruiter'] },
-  { icon: Calculator, label: 'Accountant Shift Report', path: '/accountant-report', category: 'Reports', allowedDesignationNames: ['accountant', 'accounts', 'finance'] },
-  { icon: Sparkles, label: 'AI Reports', path: '/ai-report', category: 'Reports' },
-  { icon: Award, label: 'KPI Analytics', path: '/performance-dashboard', category: 'Reports', allowedRoles: ['1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl'] },
-  { icon: BarChart2, label: 'Employee Reports', path: '/employee-reports', category: 'Reports', allowedRoles: ['hr', 'admin'] },
-  { icon: UsersRound, label: 'Team Reports', path: '/team-reports', category: 'Reports', isTeamLeadOnly: true },
-  { icon: FileCode, label: 'Developer Report', path: '/developer-report', category: 'Reports', allowedDesignationNames: ['developer', 'dev', 'junior', 'jr', 'software', 'engineer', 'react', 'node', 'flutter', 'coder', 'programmer', 'frontend', 'backend', 'fullstack', 'web'] },
-  { icon: Lightbulb, label: 'HOD R&D Report', path: '/hod-rd-report', category: 'Reports', allowedDesignationNames: ['hod'] },
-  { icon: Paintbrush, label: 'Graphic Designer Report', path: '/graphic-designer-report', category: 'Reports', allowedDesignationNames: ['graphic', 'designer', 'ui', 'ux'] },
-  { icon: FileVideo, label: 'Videographer Report', path: '/videographer-report', category: 'Reports', allowedDesignationNames: ['video', 'editor', 'media'] },
-  { icon: BookOpenCheck, label: 'Academic Counselor Report', path: '/academic-counselor-report', category: 'Reports', allowedDesignationNames: ['counselor', 'academic', 'tele'] },
-  { icon: Sliders, label: 'Ops Shift Report', path: '/ops-report', category: 'Reports', allowedDesignationNames: ['ops', 'operation', 'sales'] },
-  { icon: PieChart, label: 'Marketing Shift Report', path: '/marketing-report', category: 'Reports', allowedDesignationNames: ['marketing', 'marketer', 'digital'] },
-  { icon: Megaphone, label: 'HOD Marketing Report', path: '/hod-marketing-report', category: 'Reports', allowedRoles: ['1', '2', 'admin', 'hr', 'superadmin', 'manager'], allowedDesignationNames: ['marketing', 'marketer', 'hod', 'head', 'cmo', 'digital'] },
-  { icon: ClipboardList, label: 'Daily Report', path: '/basic-report', category: 'Reports', isBasicReportFallback: true },
-  { icon: FileText, label: 'Daily Shift Report', path: '/daily-shift-report', category: 'Reports' },
-
-  // --- DAILY OPERATIONS ---
-  { icon: Clock, label: 'Daily Operations OS', path: '/daily-operations', category: 'Daily Operations' },
-  { icon: UsersRound, label: 'TL Daily Operations', path: '/tl-daily-operations', category: 'Daily Operations', allowedRoles: ['1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl'], allowedDesignationNames: ['team lead', 'teamlead', 'tl', 'lead', 'manager', 'supervisor', 'hod'] },
-  { icon: Clock, label: 'Attendance', path: '/attendance', category: 'Daily Operations' },
-  { icon: ListCheck, label: 'Task Assign', path: '/todo', category: 'Daily Operations' },
+  // --- REPORTS & OPERATIONS ---
+  { icon: BarChart3, label: 'Polyclinic Analytics', path: '/polyclinic-reports', category: 'Reports & Operations' },
+  { icon: Sparkles, label: 'AI Health Insights', path: '/ai-report', category: 'Reports & Operations' },
+  { icon: ListCheck, label: 'Task Assignment', path: '/todo', category: 'Reports & Operations' }
 ];
 
 // Simple Portal implementation to render the badge safely outside of parent overflow cropping

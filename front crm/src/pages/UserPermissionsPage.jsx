@@ -22,6 +22,20 @@ const getApiEndpoint = (path) => {
 };
 
 const ALL_SIDEBAR_ITEMS = [
+  // Polyclinic & Healthcare
+  { label: 'Polyclinic Dashboard', path: '/polyclinic-dashboard', category: 'Polyclinic Healthcare', desc: 'Central Polyclinic & Healthcare operations dashboard' },
+  { label: 'Reception Queue', path: '/reception-queue', category: 'Polyclinic Healthcare', desc: 'Live patient check-in token waiting queue dispatch board' },
+  { label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Polyclinic Healthcare', desc: 'Patient lead enquiry registration & appointment conversion' },
+  { label: 'Appointments', path: '/appointments', category: 'Polyclinic Healthcare', desc: 'Doctor slot booking & appointment management' },
+  { label: 'Doctor EMR Consultation', path: '/doctor-emr', category: 'Polyclinic Healthcare', desc: 'Electronic medical records, symptoms, vitals & diagnosis' },
+  { label: 'Digital Prescriptions', path: '/prescriptions', category: 'Polyclinic Healthcare', desc: 'Structured digital prescriptions with dosage & frequency' },
+  { label: 'Laboratory & Diagnostics', path: '/laboratory', category: 'Polyclinic Healthcare', desc: 'Diagnostic test requests, sample collection & report entry' },
+  { label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Polyclinic Healthcare', desc: 'Medicine & clinic consumable stock, batch & low stock alerts' },
+  { label: 'Billing & Invoices', path: '/billing', category: 'Polyclinic Healthcare', desc: 'Consolidated patient healthcare billing & receipts' },
+  { label: 'Doctors & Staff', path: '/doctors-staff', category: 'Polyclinic Healthcare', desc: 'Doctor schedules, fees & visiting doctor payouts' },
+  { label: 'Patient Follow-ups', path: '/patient-followups', category: 'Polyclinic Healthcare', desc: 'Post-consultation follow-up reminders & care plans' },
+  { label: 'Polyclinic Analytics', path: '/polyclinic-reports', category: 'Polyclinic Healthcare', desc: 'Polyclinic revenue, patient counts & inventory analytics' },
+
   // Dashboards
   { label: 'Dashboard', path: '/dashboard', category: 'Dashboards', desc: 'Main CRM overview & key metrics' },
   { label: 'Admin Dashboard', path: '/dashboard', category: 'Dashboards', desc: 'Admin panel with full CRM overview & controls' },
@@ -59,43 +73,13 @@ const ALL_SIDEBAR_ITEMS = [
   { label: 'Client Leads', path: '/client-leads', category: 'Leads', desc: 'Client lead pipeline & inquiries' },
   { label: 'Student Leads', path: '/leads-telecaller', category: 'Leads', desc: 'Telecaller assigned lead calls' },
 
-  // LMS / Academy
-  { label: 'Course Management', path: '/academy/courses', category: 'LMS / Academy', desc: 'Course catalog & curriculum management' },
-  { label: 'Batches', path: '/academy/batches', category: 'LMS / Academy', desc: 'Student batch creation & schedule tracking' },
-  { label: 'Enrollment Tracking', path: '/academy/enrollments', category: 'LMS / Academy', desc: 'Student course enrollment & fee status' },
-  { label: 'Training LMS', path: '/training-lms', category: 'LMS / Academy', desc: 'Employee internal staff training LMS portal' },
-  { label: 'My LMS Learning', path: '/academy/learning', category: 'LMS / Academy', desc: 'Student LMS portal & course materials' },
-
   // Analytics & Reports
   { label: 'KPI Analytics', path: '/performance-dashboard', category: 'Analytics', desc: 'Quantitative KPI score & performance' },
   { label: 'AI Reports', path: '/ai-report', category: 'Analytics', desc: 'Automated AI reports & summaries' },
-  { label: 'Employee Reports', path: '/employee-reports', category: 'Reports', desc: 'Employee activity & performance logs' },
-  { label: 'Daily Report', path: '/basic-report', category: 'Reports', desc: 'Common daily shift activity & report view' },
-  { label: 'Team Reports', path: '/team-reports', category: 'Reports', desc: 'Team lead department reports' },
-  { label: 'Developer Report', path: '/developer-report', category: 'Reports', desc: 'Developer daily shift reports' },
-  { label: 'Graphic Designer Report', path: '/graphic-designer-report', category: 'Reports', desc: 'Graphic design shift reports' },
-  { label: 'Videographer Report', path: '/videographer-report', category: 'Reports', desc: 'Videography shift reports' },
-  { label: 'Academic Counselor Report', path: '/academic-counselor-report', category: 'Reports', desc: 'Academic counselor shift reports' },
-  { label: 'HOD R&D Report', path: '/hod-rd-report', category: 'Reports', desc: 'HOD R&D shift reports' },
-  { label: 'HOD Marketing Report', path: '/hod-marketing-report', category: 'Reports', desc: 'HOD Marketing consolidated shift reports' },
-  { label: 'HR Shift Report', path: '/hr-report', category: 'Reports', desc: 'HR shift reports' },
-  { label: 'Ops Shift Report', path: '/ops-report', category: 'Reports', desc: 'Operations shift reports' },
-  { label: 'Accountant Shift Report', path: '/accountant-report', category: 'Reports', desc: 'Accountant shift reports' },
-  { label: 'Marketing Shift Report', path: '/marketing-report', category: 'Reports', desc: 'Marketing shift reports' },
-  { label: 'Daily Shift Report', path: '/daily-shift-report', category: 'Reports', desc: 'Official KOD.BRAND daily shift report & operational log' },
+  { label: 'Daily Shift Report', path: '/daily-shift-report', category: 'Reports', desc: 'Official daily shift report & operational log' },
 
   // Finance & Accounts
   { label: 'Accounts', path: '/accounts', category: 'Finance', desc: 'Expense management, salary & cash book overview' },
-  { label: 'Sales', path: '/accounts/income', category: 'Finance', desc: 'Revenue, client invoices & payment receipt records' },
-  { label: 'Income', path: '/accounts/sales', category: 'Finance', desc: 'Client sales deals, billing invoices & revenue tracking' },
-  { label: 'Purchase', path: '/accounts/purchase', category: 'Finance', desc: 'Vendor procurement, purchase orders & stock bills' },
-  { label: 'Create Invoice', path: '/accounts/create-invoice', category: 'Finance', desc: 'Itemized tax invoice & billing builder' },
-  { label: 'Expense Categories', path: '/accounts/categories', category: 'Finance', desc: 'Account expense categories' },
-  { label: 'Expense', path: '/accounts/expenses', category: 'Finance', desc: 'Record & upload expense vouchers' },
-  { label: 'Salary Payment', path: '/accounts/salary', category: 'Finance', desc: 'Salary payment processing & disbursal' },
-  { label: 'Cash & Bank', path: '/accounts/cash-book', category: 'Finance', desc: 'Cash & bank ledger & transaction history' },
-  { label: 'Operation', path: '/accounts/operation', category: 'Finance', desc: 'Operation amount ledger, given by & to whom records' },
-  { label: 'Financial Report', path: '/accounts/reports', category: 'Finance', desc: 'Financial expense analytics & summaries' },
   { label: 'Payslips', path: '/payslips', category: 'Finance', desc: 'Employee payslip generation & disbursal records' },
   { label: 'Personal Payslip', path: '/my-payslip', category: 'Finance', desc: 'Personal salary slip portal for individual employees' },
 

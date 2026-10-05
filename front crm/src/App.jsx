@@ -81,6 +81,20 @@ import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import VisibleWorkPage from './pages/VisibleWorkPage';
 import ProjectReportsPage from './pages/ProjectReportsPage';
 
+// Polyclinic Healthcare Module Pages
+import PolyclinicDashboard from './pages/PolyclinicDashboard';
+import PatientEnquiriesPage from './pages/PatientEnquiriesPage';
+import AppointmentsPage from './pages/AppointmentsPage';
+import ReceptionQueuePage from './pages/ReceptionQueuePage';
+import DoctorEMRPage from './pages/DoctorEMRPage';
+import PrescriptionsPage from './pages/PrescriptionsPage';
+import LaboratoryPage from './pages/LaboratoryPage';
+import PharmacyInventoryPage from './pages/PharmacyInventoryPage';
+import BillingPage from './pages/BillingPage';
+import DoctorsStaffPage from './pages/DoctorsStaffPage';
+import PatientFollowUpPage from './pages/PatientFollowUpPage';
+import PolyclinicReportsPage from './pages/PolyclinicReportsPage';
+
 
 
 
@@ -189,7 +203,19 @@ function App() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
         {/* Protected Routes - Wrapped in MainLayout */}
-        <Route path="/dashboard" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PolyclinicDashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/polyclinic-dashboard" element={<ProtectedRoute><MainLayout><PolyclinicDashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/patient-enquiries" element={<ProtectedRoute><MainLayout><PatientEnquiriesPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/appointments" element={<ProtectedRoute><MainLayout><AppointmentsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/reception-queue" element={<ProtectedRoute><MainLayout><ReceptionQueuePage /></MainLayout></ProtectedRoute>} />
+        <Route path="/doctor-emr" element={<ProtectedRoute><MainLayout><DoctorEMRPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/prescriptions" element={<ProtectedRoute><MainLayout><PrescriptionsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/laboratory" element={<ProtectedRoute><MainLayout><LaboratoryPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/pharmacy-inventory" element={<ProtectedRoute><MainLayout><PharmacyInventoryPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><MainLayout><BillingPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/doctors-staff" element={<ProtectedRoute><MainLayout><DoctorsStaffPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/patient-followups" element={<ProtectedRoute><MainLayout><PatientFollowUpPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/polyclinic-reports" element={<ProtectedRoute><MainLayout><PolyclinicReportsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/lead-dashboard" element={<ProtectedRoute><MainLayout><LeadDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/marketing-dashboard" element={<ProtectedRoute><MainLayout><MarketingDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/attendance" element={<ProtectedRoute><MainLayout><Attendance /></MainLayout></ProtectedRoute>} />

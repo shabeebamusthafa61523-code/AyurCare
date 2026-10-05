@@ -74,5 +74,5 @@ export const resolveUserDashboardPath = (userObj) => {
   }
 
   // 4. Default Fallback
-  return '/common-dashboard';
+  return '/polyclinic-dashboard';
 };
