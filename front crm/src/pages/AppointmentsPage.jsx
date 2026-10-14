@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Calendar, Clock, Stethoscope, CheckCircle2, User, Plus, Search, Filter, Phone, MessageSquare, AlertCircle, X } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PatientDetailsModal from '../components/PatientDetailsModal';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -10,6 +11,7 @@ export default function AppointmentsPage() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
+  const [selectedPatientIdForDetails, setSelectedPatientIdForDetails] = useState(null);
 
   // Book Appointment Modal State
   const [showBookModal, setShowBookModal] = useState(false);
@@ -178,19 +180,19 @@ export default function AppointmentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 p-6 rounded-2xl shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-500" /> Appointments & Slot Scheduling
+            <Calendar className="w-5 h-5 text-emerald-600" /> Vaidya OP Appointments & Slot Scheduling
           </h1>
           <p className="text-slate-500 text-xs mt-0.5">
-            Doctor availability, slot limits (1 active appointment per patient), status flow & instant reminders.
+            Schedule Ayurvedic doctor consultations, Panchakarma therapy review slots, token numbers, and WhatsApp reminders.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setShowBookModal(true)}
-            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2 rounded-xl shadow-sm transition text-xs"
+            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition text-xs"
           >
-            <Plus className="w-4 h-4" /> Book Appointment
+            <Plus className="w-4 h-4" /> Book OP Slot
           </button>
 
           {/* Status Filter Tabs */}
@@ -238,7 +240,14 @@ export default function AppointmentsPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">{appt.patientName}</h3>
+                  <h3 
+                    onClick={() => setSelectedPatientIdForDetails(appt.patient)}
+                    className="font-bold text-slate-900 dark:text-white text-base hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer hover:underline flex items-center justify-between"
+                    title="Click to view complete clinical history & follow-ups"
+                  >
+                    <span>{appt.patientName}</span>
+                    <span className="text-[11px] font-normal text-emerald-600 dark:text-emerald-400">View Logs &rarr;</span>
+                  </h3>
                   <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {appt.patientPhone}</p>
                 </div>
 
@@ -417,6 +426,13 @@ export default function AppointmentsPage() {
         </div>,
         document.body
       )}
+
+      {/* Patient 360 Full Details & Logs Modal */}
+      <PatientDetailsModal
+        isOpen={!!selectedPatientIdForDetails}
+        patientId={selectedPatientIdForDetails}
+        onClose={() => setSelectedPatientIdForDetails(null)}
+      />
 
       {/* Confirmation Modal */}
       <ConfirmationModal

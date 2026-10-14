@@ -20,7 +20,7 @@ const billingSchema = new mongoose.Schema({
     description: { type: String, required: true },
     category: {
       type: String,
-      enum: ['Consultation', 'Laboratory', 'Pharmacy', 'Procedure', 'Consumable', 'Other'],
+      enum: ['Consultation', 'Panchakarma / Therapy', 'Therapy Package', 'Aushadhi / Pharmacy', 'Consumable', 'Room / Day Care', 'Other'],
       default: 'Consultation'
     },
     qty: { type: Number, default: 1 },

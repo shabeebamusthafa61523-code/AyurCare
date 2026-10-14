@@ -47,6 +47,30 @@ const patientSchema = new mongoose.Schema({
     phone: { type: String, default: '' },
     relation: { type: String, default: '' }
   },
+  prakriti: {
+    type: String,
+    enum: ['Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha', 'Tridosha / Sama', 'Unknown'],
+    default: 'Unknown'
+  },
+  vikriti: {
+    type: String,
+    default: ''
+  },
+  agni: {
+    type: String,
+    enum: ['Manda (Sluggish)', 'Tikshna (Sharp)', 'Vishama (Irregular)', 'Sama (Balanced)', 'Unknown'],
+    default: 'Unknown'
+  },
+  koshtha: {
+    type: String,
+    enum: ['Krura (Hard)', 'Mridu (Soft)', 'Madhyama (Moderate)', 'Unknown'],
+    default: 'Unknown'
+  },
+  dietHabit: {
+    type: String,
+    enum: ['Vegetarian', 'Non-Vegetarian', 'Eggetarian', 'Vegan'],
+    default: 'Vegetarian'
+  },
   medicalHistory: [{
     type: String
   }],

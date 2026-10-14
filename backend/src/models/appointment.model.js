@@ -19,8 +19,13 @@ const appointmentSchema = new mongoose.Schema({
     required: true
   },
   doctorName: { type: String, required: true },
-  specialization: { type: String, default: 'General Medicine' },
-  department: { type: String, default: 'Consultation' },
+  specialization: { type: String, default: 'Kayachikitsa & Panchakarma' },
+  department: { type: String, default: 'Ayurvedic OP' },
+  appointmentType: {
+    type: String,
+    enum: ['Doctor Consultation', 'Panchakarma Therapy Session', 'Follow-up Review'],
+    default: 'Doctor Consultation'
+  },
   date: { type: Date, required: true },
   timeSlot: { type: String, required: true },
   status: {

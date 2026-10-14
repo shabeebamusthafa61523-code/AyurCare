@@ -64,22 +64,35 @@ export default function BillingPage() {
       const res = await polyclinicService.getPatientById(patientId);
       if (res.success && res.history) {
         const fetchedItems = [];
-        const { appointments, labTests, prescriptions } = res.history;
+        const { appointments, labTests, prescriptions, panchakarma } = res.history;
 
         // 1. Doctor Consultations
         if (appointments && appointments.length > 0) {
           appointments.forEach(appt => {
             fetchedItems.push({
-              description: `Doctor Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`,
+              description: `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`,
               category: 'Consultation',
               qty: 1,
-              unitPrice: appt.consultationFee || 600,
-              amount: appt.consultationFee || 600
+              unitPrice: appt.consultationFee || 500,
+              amount: appt.consultationFee || 500
             });
           });
         }
 
-        // 2. Laboratory & Diagnostic Tests
+        // 2. Panchakarma Therapy Packages
+        if (panchakarma && panchakarma.length > 0) {
+          panchakarma.forEach(pk => {
+            fetchedItems.push({
+              description: `Panchakarma Package: ${pk.therapyName} (${pk.totalSessions} Sessions)`,
+              category: 'Therapy Package',
+              qty: 1,
+              unitPrice: pk.packageCost || 7500,
+              amount: pk.packageCost || 7500
+            });
+          });
+        }
+
+        // 3. Laboratory & Diagnostic Tests
         if (labTests && labTests.length > 0) {
           labTests.forEach(test => {
             fetchedItems.push({
@@ -92,16 +105,16 @@ export default function BillingPage() {
           });
         }
 
-        // 3. Prescribed Medicines / Pharmacy
+        // 4. Prescribed Medicines / Aushadhi Shala
         if (prescriptions && prescriptions.length > 0) {
           prescriptions.forEach(rx => {
             (rx.medicines || []).forEach(med => {
               fetchedItems.push({
-                description: `Pharmacy Rx: ${med.name} (${med.dosage || '1 tab'} - ${med.duration || '5 Days'})`,
-                category: 'Pharmacy',
+                description: `Aushadhi: ${med.name} (${med.dosage || '15ml'} - ${med.duration || '15 Days'})`,
+                category: 'Aushadhi / Pharmacy',
                 qty: 1,
-                unitPrice: 100,
-                amount: 100
+                unitPrice: 180,
+                amount: 180
               });
             });
           });
@@ -111,7 +124,7 @@ export default function BillingPage() {
           setItems(fetchedItems);
           const totalCalc = fetchedItems.reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
           setPaidAmount(totalCalc);
-          setAutoFetchNotice(`⚡ Auto-fetched ${fetchedItems.length} bill item(s) from patient's consultations, lab tests & prescriptions!`);
+          setAutoFetchNotice(`⚡ Auto-fetched ${fetchedItems.length} bill item(s) from patient's consultations, Panchakarma therapies & Aushadhis!`);
         } else {
           setItems([{ description: 'General Doctor Consultation Fee', category: 'Consultation', qty: 1, unitPrice: 600, amount: 600 }]);
           setPaidAmount(600);
@@ -374,10 +387,13 @@ export default function BillingPage() {
                           onChange={(e) => updateItem(idx, 'category', e.target.value)}
                           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-900 dark:text-white text-xs font-medium"
                         >
-                          <option value="Consultation" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Consultation</option>
-                          <option value="Laboratory" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Laboratory</option>
-                          <option value="Pharmacy" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Pharmacy</option>
-                          <option value="Procedure" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Procedure</option>
+                          <option value="Consultation">Vaidya Consultation</option>
+                          <option value="Therapy Package">Panchakarma Package</option>
+                          <option value="Panchakarma / Therapy">Panchakarma Session</option>
+                          <option value="Aushadhi / Pharmacy">Aushadhi Shala (Medicine)</option>
+                          <option value="Laboratory">Laboratory & Diagnostics</option>
+                          <option value="Room / Day Care">Room / Day Care</option>
+                          <option value="Other">Other</option>
                         </select>
                       </div>
                       <div>

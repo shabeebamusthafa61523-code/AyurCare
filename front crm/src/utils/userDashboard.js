@@ -5,6 +5,7 @@
  */
 
 export const ALL_DASHBOARD_ITEMS = [
+  { label: 'Ayurvedic Hospital Dashboard', path: '/polyclinic-dashboard', aliases: ['ayurvedic', 'hospital', 'clinic', 'polyclinic', 'doctor', 'vaidya', 'therapist'] },
   { label: 'Dashboard', path: '/dashboard', aliases: ['admin dashboard', 'main dashboard', 'superadmin dashboard'] },
   { label: 'MD Dashboard', path: '/md-dashboard', aliases: ['md dashboard', 'coo dashboard', 'executive dashboard'] },
   { label: 'HR Dashboard', path: '/hr-dashboard', aliases: ['hr dashboard', 'recruiter dashboard', 'hr'] },

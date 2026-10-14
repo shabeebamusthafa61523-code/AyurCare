@@ -1,7 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Pill, Plus, Printer, FileText, Trash2, CheckCircle2, Stethoscope, Download } from 'lucide-react';
+import { 
+  FileText, 
+  Plus, 
+  Printer, 
+  Trash2, 
+  CheckCircle2, 
+  Stethoscope, 
+  Download,
+  Sparkles,
+  Droplet,
+  Coffee,
+  Clock,
+  Apple,
+  ShieldAlert,
+  ChevronDown,
+  X
+} from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
+
+const FORM_OPTIONS = [
+  'Kashayam',
+  'Arishtam / Asavam',
+  'Tailam / Thailam',
+  'Ghritam',
+  'Churnam',
+  'Gulika / Vati',
+  'Lehyam / Rasayanam',
+  'Bhasmam / Pishti',
+  'Kwatha Choornam',
+  'External Application',
+  'Other'
+];
+
+const ANUPANA_OPTIONS = [
+  'Lukewarm water (Ushnodaka)',
+  'Boiled water with dry ginger (Shunti Jala)',
+  'Honey (Madhu)',
+  'Boiled warm cow milk (Ksheera)',
+  'Cow ghee (Ghrita)',
+  'Ginger juice (Ardraka Swarasa)',
+  'Cumin water (Jeeraka Jala)',
+  'Pomegranate juice (Dadima)',
+  'Warm water with pinch of rock salt (Saindhava)',
+  'External Application'
+];
+
+const TIMING_OPTIONS = [
+  'Pragbhakta (Before Food)',
+  'Adhobhakta (After Food)',
+  'Madhyabhakta (During Food)',
+  'Nishi (At Bedtime)',
+  'Empty Stomach (Prathah Kaal)',
+  'External Application'
+];
 
 export default function PrescriptionsPage() {
   const [patients, setPatients] = useState([]);
@@ -12,9 +64,24 @@ export default function PrescriptionsPage() {
   // New Prescription State
   const [selectedPatient, setSelectedPatient] = useState('');
   const [medicines, setMedicines] = useState([
-    { name: 'Paracetamol 650mg', dosage: '1 tablet', frequency: '1-0-1', duration: '5 Days', instructions: 'After food' }
+    {
+      name: 'Maharasnadi Kashayam',
+      form: 'Kashayam',
+      dosage: '15 ml mixed with 45 ml lukewarm water',
+      frequency: 'Twice daily',
+      anupana: 'Lukewarm water (Ushnodaka)',
+      timing: 'Pragbhakta (Before Food)',
+      duration: '15 Days',
+      instructions: 'Drink on an empty stomach in the morning & before dinner.'
+    }
   ]);
-  const [notes, setNotes] = useState('Drink warm water, take adequate rest, and avoid cold drinks.');
+  const [pathyaApathyaNotes, setPathyaApathyaNotes] = useState(
+    'Drink boiled warm water throughout the day. Avoid curd, refrigerated leftovers, sour curries, and direct cold AC exposure.'
+  );
+  const [notes, setNotes] = useState('Review after 15 days or upon completing the course.');
+
+  // Print Preview Modal
+  const [previewRx, setPreviewRx] = useState(null);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -33,14 +100,15 @@ export default function PrescriptionsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const patRes = await polyclinicService.getPatients();
-      if (patRes.success) setPatients(patRes.patients);
+      const [patRes, pharmRes, rxRes] = await Promise.all([
+        polyclinicService.getPatients(),
+        polyclinicService.getPharmacyItems(),
+        polyclinicService.getPrescriptions()
+      ]);
 
-      const pharmRes = await polyclinicService.getPharmacyItems();
+      if (patRes.success) setPatients(patRes.patients || []);
       if (pharmRes.success) setPharmacyItems(pharmRes.items || []);
-
-      const rxRes = await polyclinicService.getPrescriptions();
-      if (rxRes.success) setPrescriptions(rxRes.prescriptions);
+      if (rxRes.success) setPrescriptions(rxRes.prescriptions || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -49,7 +117,19 @@ export default function PrescriptionsPage() {
   };
 
   const addMedicineRow = () => {
-    setMedicines([...medicines, { name: '', dosage: '1 tablet', frequency: '1-0-1', duration: '5 Days', instructions: 'After food' }]);
+    setMedicines([
+      ...medicines,
+      {
+        name: '',
+        form: 'Kashayam',
+        dosage: '15 ml with 45 ml warm water',
+        frequency: 'Twice daily',
+        anupana: 'Lukewarm water (Ushnodaka)',
+        timing: 'Adhobhakta (After Food)',
+        duration: '15 Days',
+        instructions: ''
+      }
+    ]);
   };
 
   const removeMedicineRow = (index) => {
@@ -62,17 +142,20 @@ export default function PrescriptionsPage() {
     setMedicines(updated);
   };
 
+  const handleSelectPredefinedMedicine = (index, medName) => {
+    const found = pharmacyItems.find(i => i.name === medName);
+    const updated = [...medicines];
+    updated[index].name = medName;
+    if (found && found.category) {
+      updated[index].form = found.category;
+    }
+    setMedicines(updated);
+  };
+
   const handleCreatePrescription = async (e) => {
     e.preventDefault();
     if (!selectedPatient) {
-      setConfirmModal({
-        isOpen: true,
-        title: 'Patient Required',
-        message: 'Please select a patient before generating the prescription.',
-        confirmText: 'OK',
-        variant: 'warning',
-        onConfirm: () => {}
-      });
+      alert('Please select a patient before generating the prescription.');
       return;
     }
 
@@ -82,21 +165,34 @@ export default function PrescriptionsPage() {
       const res = await polyclinicService.createPrescription({
         patient: selectedPatient,
         patientName: patientObj?.name || 'Patient',
-        doctorName: 'Dr. Rajesh Gupta',
+        doctorName: 'Dr. Arya Warrier (BAMS, MD)',
         medicines,
+        pathyaApathyaNotes,
         notes
       });
+
       if (res.success) {
         setConfirmModal({
           isOpen: true,
-          title: 'Digital Prescription Generated',
+          title: 'Ayurvedic Prescription Generated',
           message: `Prescription ${res.prescription?.prescriptionNo || ''} created for ${patientObj?.name}.`,
-          confirmText: 'Great!',
+          confirmText: 'Done',
           variant: 'success',
           onConfirm: () => {}
         });
         setSelectedPatient('');
-        setMedicines([{ name: '', dosage: '1 tablet', frequency: '1-0-1', duration: '5 Days', instructions: 'After food' }]);
+        setMedicines([
+          {
+            name: '',
+            form: 'Kashayam',
+            dosage: '15 ml with 45 ml warm water',
+            frequency: 'Twice daily',
+            anupana: 'Lukewarm water (Ushnodaka)',
+            timing: 'Adhobhakta (After Food)',
+            duration: '15 Days',
+            instructions: ''
+          }
+        ]);
         fetchData();
       }
     } catch (err) {
@@ -105,247 +201,351 @@ export default function PrescriptionsPage() {
   };
 
   const handlePrintRx = (rx) => {
-    window.print();
+    setPreviewRx(rx);
+    setTimeout(() => {
+      window.print();
+    }, 300);
   };
 
   return (
     <div className="p-2 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
-      <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-emerald-950 text-white p-6 rounded-3xl shadow-xl border border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Pill className="w-5 h-5 text-emerald-500" /> Digital Prescription & Rx Engine
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold mb-2 border border-emerald-500/30">
+            <Sparkles className="w-3.5 h-3.5" /> Aushadha Chikitsa & Sevana Kala
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+            <FileText className="w-5 h-5 text-emerald-400" /> Ayurvedic Digital Prescriptions (Aushadhi Patra)
           </h1>
-          <p className="text-slate-500 text-xs mt-0.5">
-            Structured medicine dosages, frequency schedules, duration, and food timing instructions.
+          <p className="text-emerald-200/80 text-xs mt-1">
+            Specify classical formulation types (Kashayam, Tailam, Arishtam, Churnam), Anupana carriers, Ayurvedic administration timings (Sevana Kala), and Pathya-Apathya rules.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Prescription Creation Form */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-5">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <FileText className="w-4 h-4 text-emerald-500" /> Create Digital Prescription
-          </h2>
+        {/* Prescription Generation Form */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-600" /> New Ayurvedic Prescription
+            </h2>
+            <button
+              type="button"
+              onClick={addMedicineRow}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Medicine
+            </button>
+          </div>
 
-          <form onSubmit={handleCreatePrescription} className="space-y-4">
-            {/* Patient Select */}
+          <form onSubmit={handleCreatePrescription} className="space-y-5">
+            {/* Patient Selector */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Patient *</label>
               <select
                 value={selectedPatient}
                 onChange={(e) => setSelectedPatient(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                 required
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
               >
-                <option value="">-- Choose Patient --</option>
+                <option value="">-- Choose Patient for Aushadhi Prescription --</option>
                 {patients.map(p => (
                   <option key={p._id} value={p._id}>
-                    {p.name} ({p.phone}) - {p.patientId}
+                    {p.name} ({p.phone}) - {p.patientId} {p.prakriti ? `[Prakriti: ${p.prakriti}]` : ''}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Datalist for Available Pharmacy Stock */}
-            <datalist id="pharmacy-medicines">
-              {pharmacyItems.map(item => (
-                <option key={item._id} value={item.name} />
-              ))}
-            </datalist>
-
             {/* Medicines List */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  Prescribed Medicines
-                </label>
-                <button
-                  type="button"
-                  onClick={addMedicineRow}
-                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Medicine
-                </button>
-              </div>
-
+            <div className="space-y-4">
               {medicines.map((med, idx) => (
-                <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-6 gap-2.5 items-start text-xs">
-                  {/* Medicine Name (Typeable Text Input + Pharmacy Inventory Selector) */}
-                  <div className="sm:col-span-2 space-y-1">
-                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Medicine Name *</label>
-                    <input
-                      type="text"
-                      list="pharmacy-medicines"
-                      placeholder="Type or pick medicine..."
-                      value={med.name}
-                      onChange={(e) => updateMedicine(idx, 'name', e.target.value)}
-                      required
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-900 dark:text-white text-xs font-semibold focus:border-emerald-500 outline-none shadow-sm"
-                    />
-                    {pharmacyItems.length > 0 && (
-                      <select
-                        value=""
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            updateMedicine(idx, 'name', e.target.value);
-                          }
-                        }}
-                        className="w-full bg-slate-200/60 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-lg px-1.5 py-1 text-[11px] text-slate-600 dark:text-slate-300 font-medium cursor-pointer"
+                <div
+                  key={idx}
+                  className="p-4 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3 relative"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Droplet className="w-3.5 h-3.5" /> Aushadhi #{idx + 1}
+                    </span>
+                    {medicines.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeMedicineRow(idx)}
+                        className="text-rose-500 hover:text-rose-700 p-1 rounded-lg"
                       >
-                        <option value="">-- Select from Pharmacy Stock --</option>
-                        {pharmacyItems.map(item => (
-                          <option key={item._id} value={item.name}>
-                            📦 {item.name} (In Stock: {item.quantity} | ₹{item.sellingPrice || item.price || 0})
-                          </option>
-                        ))}
-                      </select>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     )}
                   </div>
 
-                  {/* Dosage */}
-                  <div className="space-y-1">
-                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Dosage</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 1 tab"
-                      value={med.dosage}
-                      onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-slate-900 dark:text-white text-xs"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Medicine Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={med.name}
+                        onChange={(e) => updateMedicine(idx, 'name', e.target.value)}
+                        placeholder="e.g. Maharasnadi Kashayam, Yogaraj Guggulu..."
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white"
+                        list={`pharmacy-datalist-${idx}`}
+                      />
+                      <datalist id={`pharmacy-datalist-${idx}`}>
+                        {pharmacyItems.map(item => (
+                          <option key={item._id} value={item.name} />
+                        ))}
+                      </datalist>
+                    </div>
 
-                  {/* Frequency Dropdown */}
-                  <div className="space-y-1">
-                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Frequency</label>
-                    <select
-                      value={med.frequency}
-                      onChange={(e) => updateMedicine(idx, 'frequency', e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-slate-900 dark:text-white text-xs font-semibold"
-                    >
-                      <option value="1-0-1">1-0-1 (Morn-Night)</option>
-                      <option value="1-0-0">1-0-0 (Morning)</option>
-                      <option value="0-1-0">0-1-0 (Afternoon)</option>
-                      <option value="0-0-1">0-0-1 (Night)</option>
-                      <option value="1-1-1">1-1-1 (Thrice daily)</option>
-                      <option value="1-1-1-1">1-1-1-1 (4 times/day)</option>
-                      <option value="As Needed">As Needed (SOS)</option>
-                    </select>
-                  </div>
-
-                  {/* Duration */}
-                  <div className="space-y-1">
-                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Duration</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 5 Days"
-                      value={med.duration}
-                      onChange={(e) => updateMedicine(idx, 'duration', e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-slate-900 dark:text-white text-xs"
-                    />
-                  </div>
-
-                  {/* Timing / Food Instructions Dropdown */}
-                  <div className="space-y-1 flex flex-col">
-                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Timing / Food</label>
-                    <div className="flex items-center gap-1">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Formulation Form (Kalpana)</label>
                       <select
+                        value={med.form}
+                        onChange={(e) => updateMedicine(idx, 'form', e.target.value)}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      >
+                        {FORM_OPTIONS.map(form => (
+                          <option key={form} value={form}>{form}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Dosage</label>
+                      <input
+                        type="text"
+                        value={med.dosage}
+                        onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
+                        placeholder="e.g. 15 ml, 2 tabs, 1 tsp"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Anupana (Carrier / Vehicle)</label>
+                      <select
+                        value={med.anupana}
+                        onChange={(e) => updateMedicine(idx, 'anupana', e.target.value)}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      >
+                        {ANUPANA_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Sevana Kala (Administration Timing)</label>
+                      <select
+                        value={med.timing}
+                        onChange={(e) => updateMedicine(idx, 'timing', e.target.value)}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      >
+                        {TIMING_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Duration</label>
+                      <input
+                        type="text"
+                        value={med.duration}
+                        onChange={(e) => updateMedicine(idx, 'duration', e.target.value)}
+                        placeholder="e.g. 15 Days, 1 Month"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">Special Instructions</label>
+                      <input
+                        type="text"
                         value={med.instructions}
                         onChange={(e) => updateMedicine(idx, 'instructions', e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-slate-900 dark:text-white text-xs font-semibold text-emerald-600 dark:text-emerald-400"
-                      >
-                        <option value="After food">After food</option>
-                        <option value="Before food">Before food</option>
-                        <option value="Empty stomach">Empty stomach</option>
-                        <option value="With food / meals">With food / meals</option>
-                        <option value="30 mins before food">30 mins before food</option>
-                        <option value="Before bed (At night)">Before bed (At night)</option>
-                        <option value="As needed (SOS)">As needed (SOS)</option>
-                      </select>
-                      {medicines.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeMedicineRow(idx)}
-                          className="text-rose-500 hover:text-rose-700 p-1 flex-shrink-0"
-                          title="Remove Medicine"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                        placeholder="e.g. Warm water bath after application"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                      />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Doctor Advice & Dietary Notes</label>
+            {/* Pathya - Apathya & Clinical Instructions */}
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 p-4 rounded-2xl space-y-2">
+              <label className="block text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                <Apple className="w-3.5 h-3.5 text-emerald-600" /> Pathya - Apathya (Diet & Lifestyle Instructions for Patient)
+              </label>
               <textarea
                 rows="2"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                value={pathyaApathyaNotes}
+                onChange={(e) => setPathyaApathyaNotes(e.target.value)}
+                placeholder="List foods and routines to follow or avoid..."
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
             >
-              <CheckCircle2 className="w-4 h-4" /> Generate Digital Prescription
+              <CheckCircle2 className="w-4 h-4" /> Generate Ayurvedic Digital Prescription
             </button>
           </form>
         </div>
 
-        {/* Prescription Feed */}
-        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Pill className="w-4 h-4 text-emerald-500" /> Recent Digital Prescriptions
-          </h2>
+        {/* Existing Prescriptions List */}
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-600" /> Issued Prescriptions
+            </h2>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              {prescriptions.length} Total
+            </span>
+          </div>
 
-          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+          <div className="space-y-3 max-h-[680px] overflow-y-auto pr-1">
             {prescriptions.length === 0 ? (
-              <p className="text-xs text-slate-400">No prescriptions issued.</p>
+              <p className="text-xs text-slate-400">No prescriptions issued yet.</p>
             ) : (
               prescriptions.map((rx) => (
-                <div key={rx._id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-3 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-2">
+                <div
+                  key={rx._id}
+                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-3 text-xs"
+                >
+                  <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-bold text-emerald-600 dark:text-emerald-400">{rx.prescriptionNo}</p>
-                      <p className="font-semibold text-slate-900 dark:text-white text-xs">{rx.patientName}</p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        {rx.prescriptionNo}
+                      </span>
+                      <h4 className="font-bold text-slate-900 dark:text-white mt-1 text-sm">{rx.patientName}</h4>
+                      <p className="text-[11px] text-slate-400">Vaidya: {rx.doctorName}</p>
                     </div>
                     <button
                       onClick={() => handlePrintRx(rx)}
-                      className="p-1.5 bg-slate-200/70 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition"
-                      title="Print Prescription"
+                      className="p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-600 shadow-sm"
+                      title="Print Prescription Slip"
                     >
-                      <Printer className="w-3.5 h-3.5" />
+                      <Printer className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <p className="font-semibold text-slate-400 text-[11px]">Prescribed Medicines:</p>
-                    {(rx.medicines || []).map((m, i) => (
-                      <div key={i} className="flex flex-col gap-0.5 text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+                  {/* Medicines list */}
+                  <div className="space-y-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                    {(rx.medicines || []).map((m, mIdx) => (
+                      <div key={mIdx} className="bg-white dark:bg-slate-900/90 p-2 rounded-xl border border-slate-100 dark:border-slate-800/80 text-[11px]">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 flex justify-between">
                           <span>{m.name}</span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-900/40">
-                            {m.instructions || 'After food'}
-                          </span>
+                          <span className="text-emerald-600 font-semibold">{m.form}</span>
                         </div>
-                        <div className="text-slate-400 text-[10px]">
-                          Dosage: {m.dosage} • Frequency: {m.frequency} • Duration: {m.duration}
+                        <div className="text-slate-500 text-[10px] mt-0.5">
+                          {m.dosage} • Anupana: {m.anupana} • {m.timing}
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {rx.pathyaApathyaNotes && (
+                    <div className="text-[10px] text-emerald-800 dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-xl">
+                      <span className="font-bold">Pathya:</span> {rx.pathyaApathyaNotes}
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
       </div>
+
+      {/* Printable Prescription Modal (hidden on screen, visible during window.print) */}
+      {previewRx && (
+        <div className="fixed inset-0 z-50 bg-white text-slate-900 p-8 print:block hidden overflow-y-auto" id="printable-rx">
+          <div className="max-w-3xl mx-auto space-y-6 border-b pb-4">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b pb-4">
+              <div>
+                <h1 className="text-2xl font-black text-emerald-900 uppercase">AYURVEDIC HOSPITAL & PANCHAKARMA CENTRE</h1>
+                <p className="text-xs text-slate-500">Holistic Healing, Panchakarma Therapy & Classical Aushadhi Dispensary</p>
+                <p className="text-xs text-slate-500">Contact: +91 98470 12345 | opd@ayurvedichospital.com</p>
+              </div>
+              <div className="text-right">
+                <div className="text-base font-bold text-emerald-700">{previewRx.prescriptionNo}</div>
+                <div className="text-xs text-slate-500">Date: {new Date(previewRx.date || previewRx.createdAt).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            {/* Patient Info */}
+            <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded-lg border">
+              <div>
+                <span className="font-bold">Patient Name:</span> {previewRx.patientName}
+              </div>
+              <div>
+                <span className="font-bold">Consulting Vaidya:</span> {previewRx.doctorName}
+              </div>
+            </div>
+
+            {/* Medicines List */}
+            <div>
+              <h3 className="font-bold text-sm text-emerald-950 mb-2 border-b pb-1">Rx - Aushadha Prayoga</h3>
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b text-slate-600">
+                    <th className="py-1">#</th>
+                    <th className="py-1">Medicine (Aushadhi)</th>
+                    <th className="py-1">Form (Kalpana)</th>
+                    <th className="py-1">Dosage</th>
+                    <th className="py-1">Anupana (Carrier)</th>
+                    <th className="py-1">Timing (Sevana Kala)</th>
+                    <th className="py-1">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(previewRx.medicines || []).map((m, idx) => (
+                    <tr key={idx} className="border-b">
+                      <td className="py-1.5 font-bold">{idx + 1}</td>
+                      <td className="py-1.5 font-bold">{m.name}</td>
+                      <td className="py-1.5">{m.form}</td>
+                      <td className="py-1.5">{m.dosage}</td>
+                      <td className="py-1.5">{m.anupana}</td>
+                      <td className="py-1.5">{m.timing}</td>
+                      <td className="py-1.5">{m.duration}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pathya - Apathya */}
+            {previewRx.pathyaApathyaNotes && (
+              <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs">
+                <span className="font-bold text-emerald-900">Pathya - Apathya (Diet & Lifestyle Instructions):</span>
+                <p className="mt-1">{previewRx.pathyaApathyaNotes}</p>
+              </div>
+            )}
+
+            {/* Footer / Signature */}
+            <div className="flex justify-between items-end pt-12">
+              <div className="text-[11px] text-slate-400">
+                Generated via Ayurvedic Hospital Suite
+              </div>
+              <div className="text-center text-xs">
+                <div className="w-40 border-b border-slate-400 mb-1"></div>
+                <span className="font-bold">{previewRx.doctorName}</span>
+                <div className="text-[10px] text-slate-500">Authorized Vaidya Signature</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal */}
       <ConfirmationModal

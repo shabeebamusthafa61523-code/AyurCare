@@ -172,16 +172,14 @@ const Login = () => {
       
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md z-10">
 
-        <div className="text-center mb-10">
-         <div className="flex justify-center items-center mb-10">
-          <img 
-            src="/logo2.png" 
-            alt="KODBRAND Logo" 
-            className="h-22 w-auto object-contain" 
-          />
-        </div>
-
-
+        <div className="text-center mb-8">
+          <div className="flex justify-center items-center">
+            <img 
+              src="/login-logo.png" 
+              alt="AyurCare Logo" 
+              className="h-28 sm:h-32 w-auto object-contain drop-shadow-md" 
+            />
+          </div>
         </div>
 
         {/* Card Form */}

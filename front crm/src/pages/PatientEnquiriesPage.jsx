@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PatientDetailsModal from '../components/PatientDetailsModal';
 
 export default function PatientEnquiriesPage() {
   const [patients, setPatients] = useState([]);
@@ -25,6 +26,7 @@ export default function PatientEnquiriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedPatientForAppt, setSelectedPatientForAppt] = useState(null);
   const [showApptModal, setShowApptModal] = useState(false);
+  const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
 
   const [doctors, setDoctors] = useState([]);
 
@@ -46,6 +48,8 @@ export default function PatientEnquiriesPage() {
     gender: 'Male',
     age: '',
     bloodGroup: 'O+',
+    prakriti: 'Unknown',
+    dietHabit: 'Vegetarian',
     address: '',
     notes: '',
     status: 'New'
@@ -217,25 +221,54 @@ export default function PatientEnquiriesPage() {
                 </tr>
               ) : (
                 filteredPatients.map((patient) => (
-                  <tr key={patient._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
-                    <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">{patient.patientId}</td>
+                  <tr 
+                    key={patient._id} 
+                    onClick={() => setSelectedPatientForDetails(patient)}
+                    className="hover:bg-emerald-50/60 dark:hover:bg-slate-800/60 transition cursor-pointer group"
+                    title="Click to view complete patient history, logs & follow-ups"
+                  >
+                    <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
+                      {patient.patientId}
+                    </td>
                     <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                      {patient.name}
+                      <span className="group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+                        {patient.name}
+                      </span>
                       <div className="text-[11px] font-normal text-slate-400">{patient.phone}</div>
                     </td>
                     <td className="py-3.5 px-4">{patient.age} Yrs / {patient.gender}</td>
                     <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">{patient.bloodGroup || 'O+'}</td>
-                    <td className="py-3.5 px-4 max-w-xs truncate text-slate-500">{patient.notes || 'General consultation request'}</td>
+                    <td className="py-3.5 px-4 max-w-xs truncate text-slate-500">
+                      <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200/50 mr-1.5">
+                        {patient.prakriti || 'Vata-Pitta'}
+                      </span>
+                      {patient.notes || 'General consultation'}
+                    </td>
                     <td className="py-3.5 px-4">
-                      <button
-                        onClick={() => {
-                          setSelectedPatientForAppt(patient);
-                          setShowApptModal(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-semibold px-3 py-1.5 rounded-xl text-xs transition border border-emerald-200/80 dark:border-emerald-800/50"
-                      >
-                        <Calendar className="w-3.5 h-3.5" /> Book Appointment
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPatientForDetails(patient);
+                          }}
+                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl text-xs transition"
+                          title="View complete clinical history & logs"
+                        >
+                          <Activity className="w-3.5 h-3.5 text-emerald-600" /> Full Logs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPatientForAppt(patient);
+                            setShowApptModal(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-semibold px-3 py-1.5 rounded-xl text-xs transition border border-emerald-200/80 dark:border-emerald-800/50"
+                        >
+                          <Calendar className="w-3.5 h-3.5" /> Book Appt
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -338,6 +371,39 @@ export default function PatientEnquiriesPage() {
                       <option value="A-">A-</option>
                       <option value="B-">B-</option>
                       <option value="AB-">AB-</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prakriti (Body Constitution)</label>
+                    <select 
+                      value={newPatient.prakriti}
+                      onChange={(e) => setNewPatient({ ...newPatient, prakriti: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    >
+                      <option value="Unknown">Unknown / Pending Examination</option>
+                      <option value="Vata">Vata</option>
+                      <option value="Pitta">Pitta</option>
+                      <option value="Kapha">Kapha</option>
+                      <option value="Vata-Pitta">Vata-Pitta</option>
+                      <option value="Pitta-Kapha">Pitta-Kapha</option>
+                      <option value="Vata-Kapha">Vata-Kapha</option>
+                      <option value="Tridosha / Sama">Tridosha / Sama</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dietary Habit</label>
+                    <select 
+                      value={newPatient.dietHabit}
+                      onChange={(e) => setNewPatient({ ...newPatient, dietHabit: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    >
+                      <option value="Vegetarian">Vegetarian</option>
+                      <option value="Non-Vegetarian">Non-Vegetarian</option>
+                      <option value="Eggetarian">Eggetarian</option>
+                      <option value="Vegan">Vegan</option>
                     </select>
                   </div>
                 </div>
@@ -468,6 +534,14 @@ export default function PatientEnquiriesPage() {
         </div>,
         document.body
       )}
+
+      {/* Patient 360 Full Details & Logs Modal */}
+      <PatientDetailsModal
+        isOpen={!!selectedPatientForDetails}
+        patientId={selectedPatientForDetails?._id}
+        initialPatient={selectedPatientForDetails}
+        onClose={() => setSelectedPatientForDetails(null)}
+      />
 
       {/* Confirmation Modal */}
       <ConfirmationModal

@@ -70,58 +70,63 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_ORDER = [
-  'Overview & Queue',
-  'Patient CRM & Booking',
-  'Clinical EMR & Lab',
+  'Overview',
+  'Patients & Appointments',
+  'Consultations & EMR',
+  'Panchakarma Therapies',
   'Pharmacy & Billing',
   'Staff & Doctors',
-  'Reports & Operations'
+  'Reports & Tasks'
 ];
 
 const CATEGORY_CONFIG = {
-  'Overview & Queue': { label: 'Overview & Queue', icon: LayoutDashboard },
-  'Patient CRM & Booking': { label: 'Patient CRM & Booking', icon: PhoneCall },
-  'Clinical EMR & Lab': { label: 'Clinical EMR & Lab', icon: Stethoscope },
+  'Overview': { label: 'Overview', icon: LayoutDashboard },
+  'Patients & Appointments': { label: 'Patients & Appointments', icon: PhoneCall },
+  'Consultations & EMR': { label: 'Consultations & EMR', icon: Stethoscope },
+  'Panchakarma Therapies': { label: 'Panchakarma Therapies', icon: Sparkles },
   'Pharmacy & Billing': { label: 'Pharmacy & Billing', icon: Wallet },
   'Staff & Doctors': { label: 'Staff & Doctors', icon: Users },
-  'Reports & Operations': { label: 'Reports & Operations', icon: BarChart3 }
+  'Reports & Tasks': { label: 'Reports & Tasks', icon: BarChart3 }
 };
 
 const menuItems = [
-  // --- OVERVIEW & QUEUE ---
-  { icon: LayoutDashboard, label: 'Polyclinic Dashboard', path: '/polyclinic-dashboard', category: 'Overview & Queue' },
-  { icon: UserCheck, label: 'Reception Queue', path: '/reception-queue', category: 'Overview & Queue' },
-  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview & Queue' },
-  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview & Queue' },
+  // --- OVERVIEW ---
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/polyclinic-dashboard', category: 'Overview' },
+  { icon: UserCheck, label: 'Tokens & Queue', path: '/reception-queue', category: 'Overview' },
+  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview' },
+  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview' },
 
-  // --- PATIENT CRM & BOOKING ---
-  { icon: PhoneCall, label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Patient CRM & Booking' },
-  { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Patient CRM & Booking' },
-  { icon: Clock, label: 'Patient Follow-ups', path: '/patient-followups', category: 'Patient CRM & Booking' },
+  // --- PATIENTS & APPOINTMENTS ---
+  { icon: PhoneCall, label: 'Patients', path: '/patient-enquiries', category: 'Patients & Appointments' },
+  { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Patients & Appointments' },
+  { icon: Clock, label: 'Follow-ups', path: '/patient-followups', category: 'Patients & Appointments' },
 
-  // --- CLINICAL EMR & LAB ---
-  { icon: Stethoscope, label: 'Doctor EMR Consultation', path: '/doctor-emr', category: 'Clinical EMR & Lab' },
-  { icon: FileText, label: 'Digital Prescriptions', path: '/prescriptions', category: 'Clinical EMR & Lab' },
-  { icon: Activity, label: 'Laboratory & Diagnostics', path: '/laboratory', category: 'Clinical EMR & Lab' },
+  // --- CONSULTATIONS & EMR ---
+  { icon: Stethoscope, label: 'Doctor Consultations', path: '/doctor-emr', category: 'Consultations & EMR' },
+  { icon: FileText, label: 'Prescriptions', path: '/prescriptions', category: 'Consultations & EMR' },
+  { icon: Activity, label: 'Lab Reports', path: '/laboratory', category: 'Consultations & EMR' },
+
+  // --- PANCHAKARMA THERAPIES ---
+  { icon: Sparkles, label: 'Therapy Sessions', path: '/panchakarma', category: 'Panchakarma Therapies' },
 
   // --- PHARMACY & BILLING ---
   { icon: Tag, label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Pharmacy & Billing' },
   { icon: Receipt, label: 'Billing & Invoices', path: '/billing', category: 'Pharmacy & Billing' },
-  { icon: Wallet, label: 'Clinic Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing' },
-  { icon: CreditCard, label: 'Payslips', path: '/payslips', category: 'Pharmacy & Billing' },
-  { icon: FileText, label: 'Personal Payslip', path: '/my-payslip', category: 'Pharmacy & Billing' },
+  { icon: Wallet, label: 'Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing' },
+  { icon: CreditCard, label: 'Staff Payslips', path: '/payslips', category: 'Pharmacy & Billing' },
+  { icon: FileText, label: 'My Payslip', path: '/my-payslip', category: 'Pharmacy & Billing' },
 
   // --- STAFF & DOCTORS ---
-  { icon: UserCog, label: 'Doctors & Staff', path: '/doctors-staff', category: 'Staff & Doctors' },
+  { icon: UserCog, label: 'Doctors & Therapists', path: '/doctors-staff', category: 'Staff & Doctors' },
   { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'Staff & Doctors' },
   { icon: Users, label: 'Users & Roles', path: '/users', category: 'Staff & Doctors' },
   { icon: Building, label: 'Departments', path: '/departments', category: 'Staff & Doctors' },
-  { icon: ShieldCheck, label: 'Permission Configuration', path: '/permissions', category: 'Staff & Doctors' },
+  { icon: ShieldCheck, label: 'Role Permissions', path: '/permissions', category: 'Staff & Doctors' },
 
-  // --- REPORTS & OPERATIONS ---
-  { icon: BarChart3, label: 'Polyclinic Analytics', path: '/polyclinic-reports', category: 'Reports & Operations' },
-  { icon: Sparkles, label: 'AI Health Insights', path: '/ai-report', category: 'Reports & Operations' },
-  { icon: ListCheck, label: 'Task Assignment', path: '/todo', category: 'Reports & Operations' }
+  // --- REPORTS & TASKS ---
+  { icon: BarChart3, label: 'Hospital Reports', path: '/polyclinic-reports', category: 'Reports & Tasks' },
+  { icon: Sparkles, label: 'AI Health Insights', path: '/ai-report', category: 'Reports & Tasks' },
+  { icon: ListCheck, label: 'Tasks', path: '/todo', category: 'Reports & Tasks' }
 ];
 
 // Simple Portal implementation to render the badge safely outside of parent overflow cropping
@@ -566,12 +571,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         }`}
       >
         {/* Logo header */}
-        <div className="h-16 flex items-center justify-between px-5 shrink-0 overflow-hidden border-b border-slate-100 dark:border-slate-800/40">
-          <div className="flex items-center gap-3">
+        <div className={`h-16 flex items-center justify-between shrink-0 overflow-hidden border-b border-slate-100 dark:border-slate-800/40 ${
+          isCollapsed ? 'px-3' : 'px-5'
+        }`}>
+          <div className="flex items-center gap-2.5">
             {!isCollapsed ? (
-              <img src="/logo3.png" alt="StaffHQ Logo" className="h-8 w-auto object-contain" />
+              <img src="/logo3.png" alt="AyurCare Logo" className="h-9 w-auto object-contain" />
             ) : (
-              <img src="/logo2.png" alt="StaffHQ Logo Icon" className="h-8 w-8 object-contain shrink-0" />
+              <img src="/logo2.png" alt="AyurCare Logo Icon" className="h-8 w-8 object-contain shrink-0" />
             )}
           </div>
           <button
@@ -640,7 +647,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         }`}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
-          <img src="/logo3.png" alt="StaffHQ Logo" className="h-8 w-auto object-contain" />
+          <img src="/logo3.png" alt="AyurCare Logo" className="h-9 w-auto object-contain" />
           <button 
             onClick={() => setIsMobileOpen(false)}
             className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

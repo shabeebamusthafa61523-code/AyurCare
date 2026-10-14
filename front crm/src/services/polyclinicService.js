@@ -3,10 +3,11 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const rawToken = localStorage.getItem('token') || '';
+  const cleanToken = rawToken.replace(/^"(.*)"$/, '$1').trim();
   return {
     headers: {
-      Authorization: token ? `Bearer ${token}` : '',
+      Authorization: cleanToken ? (cleanToken.startsWith('Bearer ') ? cleanToken : `Bearer ${cleanToken}`) : '',
       'Content-Type': 'application/json'
     }
   };
@@ -134,6 +135,28 @@ export const polyclinicService = {
   },
   deleteFollowUp: async (id) => {
     const res = await axios.delete(`${API_URL}/v1/polyclinic/follow-ups/${id}`, getAuthHeaders());
+    return res.data;
+  },
+
+  // Panchakarma Therapy Suite
+  getPanchakarmaBookings: async () => {
+    const res = await axios.get(`${API_URL}/v1/polyclinic/panchakarma`, getAuthHeaders());
+    return res.data;
+  },
+  createPanchakarmaBooking: async (data) => {
+    const res = await axios.post(`${API_URL}/v1/polyclinic/panchakarma`, data, getAuthHeaders());
+    return res.data;
+  },
+  updatePanchakarmaBooking: async (id, data) => {
+    const res = await axios.put(`${API_URL}/v1/polyclinic/panchakarma/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  logPanchakarmaSession: async (id, data) => {
+    const res = await axios.post(`${API_URL}/v1/polyclinic/panchakarma/${id}/session`, data, getAuthHeaders());
+    return res.data;
+  },
+  deletePanchakarmaBooking: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/panchakarma/${id}`, getAuthHeaders());
     return res.data;
   }
 };

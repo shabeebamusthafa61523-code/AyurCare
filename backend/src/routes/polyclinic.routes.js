@@ -25,10 +25,19 @@ import {
   getFollowUps,
   createFollowUp,
   updateFollowUp,
-  deleteFollowUp
+  deleteFollowUp,
+  getPanchakarmaBookings,
+  createPanchakarmaBooking,
+  updatePanchakarmaBooking,
+  logPanchakarmaSession,
+  deletePanchakarmaBooking
 } from '../controllers/polyclinic.controller.js';
+import protectRoute from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+// Secure all polyclinic routes with JWT authentication
+router.use(protectRoute);
 
 // Dashboard Overview
 router.get('/dashboard', getPolyclinicDashboard);
@@ -75,5 +84,12 @@ router.get('/follow-ups', getFollowUps);
 router.post('/follow-ups', createFollowUp);
 router.put('/follow-ups/:id', updateFollowUp);
 router.delete('/follow-ups/:id', deleteFollowUp);
+
+// Panchakarma Therapy Suite
+router.get('/panchakarma', getPanchakarmaBookings);
+router.post('/panchakarma', createPanchakarmaBooking);
+router.put('/panchakarma/:id', updatePanchakarmaBooking);
+router.post('/panchakarma/:id/session', logPanchakarmaSession);
+router.delete('/panchakarma/:id', deletePanchakarmaBooking);
 
 export default router;

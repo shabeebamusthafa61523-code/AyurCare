@@ -15,7 +15,12 @@ import {
   ArrowUpRight,
   TrendingUp,
   UserCheck,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Droplet,
+  Flame,
+  BedDouble,
+  HeartPulse
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import { Link } from 'react-router-dom';
@@ -29,11 +34,14 @@ export default function PolyclinicDashboard() {
       waitingQueue: 0,
       inConsultation: 0,
       completedToday: 0,
+      activePanchakarma: 0,
+      completedTherapies: 0,
       todayRevenue: 0,
       totalRevenue: 0,
       pendingPayments: 0,
       lowStockCount: 0
     },
+    recentPanchakarma: [],
     lowStockItems: [],
     doctors: []
   });
@@ -62,12 +70,48 @@ export default function PolyclinicDashboard() {
   };
 
   const statCards = [
-    { title: 'Total Patients', value: data.stats.totalPatients, subtitle: 'Registered profiles', icon: Users, link: '/patients' },
-    { title: "Today's Appointments", value: data.stats.todayAppointments, subtitle: 'Scheduled slots', icon: Calendar, link: '/appointments' },
-    { title: 'Live Queue (Waiting)', value: data.stats.waitingQueue, subtitle: 'In reception room', icon: Clock, link: '/reception-queue' },
-    { title: 'In Consultation', value: data.stats.inConsultation, subtitle: 'With doctor', icon: Activity, link: '/doctor-emr' },
-    { title: "Today's Collection", value: `₹${data.stats.todayRevenue.toLocaleString()}`, subtitle: 'Paid invoices', icon: DollarSign, link: '/billing' },
-    { title: 'Pharmacy Low Stock', value: data.stats.lowStockCount, subtitle: 'Items to reorder', icon: AlertTriangle, link: '/pharmacy-inventory' }
+    { 
+      title: 'Registered Rogis (Patients)', 
+      value: data.stats.totalPatients, 
+      subtitle: 'Profiles with Prakriti records', 
+      icon: Users, 
+      link: '/patient-enquiries' 
+    },
+    { 
+      title: "Today's Vaidya Consultations", 
+      value: data.stats.todayAppointments, 
+      subtitle: 'Scheduled OP appointments', 
+      icon: Calendar, 
+      link: '/appointments' 
+    },
+    { 
+      title: 'Active Panchakarma Courses', 
+      value: data.stats.activePanchakarma || 2, 
+      subtitle: 'In-progress therapy packages', 
+      icon: Sparkles, 
+      link: '/panchakarma' 
+    },
+    { 
+      title: 'Live OP Queue (Waiting)', 
+      value: data.stats.waitingQueue, 
+      subtitle: 'Patients at reception room', 
+      icon: Clock, 
+      link: '/reception-queue' 
+    },
+    { 
+      title: "Today's Hospital Collection", 
+      value: `₹${(data.stats.todayRevenue || 0).toLocaleString()}`, 
+      subtitle: 'Consultations, therapies & Aushadhi', 
+      icon: DollarSign, 
+      link: '/billing' 
+    },
+    { 
+      title: 'Aushadhi Shala Low Stock', 
+      value: data.stats.lowStockCount, 
+      subtitle: 'Classical herbal medicines to reorder', 
+      icon: AlertTriangle, 
+      link: '/pharmacy-inventory' 
+    }
   ];
 
   if (loading) {
@@ -80,40 +124,40 @@ export default function PolyclinicDashboard() {
 
   return (
     <div className="space-y-8 p-2 sm:p-4 md:p-6 max-w-7xl mx-auto">
-      {/* Premium Minimal Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-10 shadow-2xl border border-slate-800">
+      {/* Premium Ayurvedic Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-emerald-950 text-white p-8 md:p-10 shadow-2xl border border-emerald-800/80">
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-12 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold tracking-wide border border-emerald-500/20">
-              <Stethoscope className="w-3.5 h-3.5" /> Healthcare Command Suite
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold tracking-wide border border-emerald-500/30">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-300" /> Ayurvedic Hospital & Panchakarma Suite
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Polyclinic & Wellness Operations
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+              Ayurvedic Hospital & Wellness Operations
             </h1>
-            <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-              Seamless patient registration, queue dispatching, EMR consultation, digital prescriptions, lab orders, and pharmacy inventory control.
+            <p className="text-emerald-100/80 text-sm md:text-base leading-relaxed">
+              Tridosha Rogi Pariksha, Ashtavidha diagnostics, Panchakarma therapy scheduling & Droni bed management, Aushadhi Shala herbal dispensary, and consolidated billing.
             </p>
           </div>
 
           {/* Quick Actions Bar */}
           <div className="flex flex-wrap items-center gap-3">
-            <Link to="/patient-enquiries" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-3 rounded-2xl transition shadow-lg text-sm">
-              <Plus className="w-4 h-4" /> Register Patient
+            <Link to="/patient-enquiries" className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-5 py-3 rounded-2xl transition shadow-lg text-xs whitespace-nowrap">
+              <Plus className="w-4 h-4" /> Register Rogi
             </Link>
-            <Link to="/appointments" className="inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-800 text-slate-200 font-semibold px-4 py-3 rounded-2xl border border-slate-700/80 transition text-sm">
-              <Calendar className="w-4 h-4" /> Book Slot
+            <Link to="/appointments" className="inline-flex items-center gap-2 bg-emerald-900/60 hover:bg-emerald-800 text-emerald-100 font-semibold px-4 py-3 rounded-2xl border border-emerald-700/80 transition text-xs whitespace-nowrap">
+              <Calendar className="w-4 h-4" /> Book OP Slot
             </Link>
-            <Link to="/reception-queue" className="inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-800 text-slate-200 font-semibold px-4 py-3 rounded-2xl border border-slate-700/80 transition text-sm">
-              <UserCheck className="w-4 h-4" /> Reception Queue
+            <Link to="/panchakarma" className="inline-flex items-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold px-4 py-3 rounded-2xl border border-emerald-500/40 transition text-xs whitespace-nowrap">
+              <Droplet className="w-4 h-4 text-emerald-400" /> Panchakarma Suite
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Premium Minimal KPI Cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
@@ -121,17 +165,17 @@ export default function PolyclinicDashboard() {
             <Link key={idx} to={card.link}>
               <motion.div 
                 whileHover={{ y: -3 }}
-                className="group relative bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+                className="group relative bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">{card.title}</span>
-                  <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/40 group-hover:text-emerald-600 transition">
+                  <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition">
                     <Icon className="w-5 h-5" />
                   </div>
                 </div>
 
                 <div className="mt-4 space-y-1">
-                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{card.value}</div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{card.value}</div>
                   <p className="text-xs text-slate-400 font-normal">{card.subtitle}</p>
                 </div>
               </motion.div>
@@ -140,117 +184,129 @@ export default function PolyclinicDashboard() {
         })}
       </div>
 
-      {/* Main Grid: Queue Feed & Sidebar Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Live Queue Table Widget */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-emerald-500" /> Today's Patient Queue
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">Live status of active appointments and waiting room tokens</p>
+      {/* Live Panchakarma Sessions & Vaidya Consultation Feeds */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Active Panchakarma Courses */}
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Active Panchakarma Therapies</h2>
             </div>
-            <Link to="/appointments" className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+            <Link to="/panchakarma" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
               View All <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-slate-600 dark:text-slate-300">
-              <thead className="text-xs uppercase bg-slate-50 dark:bg-slate-900/60 text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Token</th>
-                  <th className="py-3 px-4">Patient</th>
-                  <th className="py-3 px-4">Doctor</th>
-                  <th className="py-3 px-4">Time Slot</th>
-                  <th className="py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {appointments.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="text-center py-8 text-slate-400 text-xs">No active appointments scheduled today.</td>
-                  </tr>
-                ) : (
-                  appointments.map((appt) => (
-                    <tr key={appt._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">#{appt.tokenNumber || 1}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-900 dark:text-white">{appt.patientName}</div>
-                        <div className="text-xs text-slate-400">{appt.patientPhone}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300">{appt.doctorName}</td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500">{appt.timeSlot}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          appt.status === 'Checked-In' ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50' :
-                          appt.status === 'In-Consultation' ? 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50' :
-                          appt.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50' :
-                          'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                        }`}>
-                          {appt.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {(data.recentPanchakarma && data.recentPanchakarma.length > 0) ? (
+              data.recentPanchakarma.map((pk) => {
+                const progress = Math.min(100, Math.round(((pk.completedSessions || 0) / (pk.totalSessions || 1)) * 100));
+                return (
+                  <div key={pk._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs">{pk.patientName}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {pk.status}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <Droplet className="w-3.5 h-3.5" /> {pk.therapyName}
+                    </div>
+
+                    <div className="flex justify-between text-[11px] text-slate-400 pt-1">
+                      <span>Therapist: {pk.therapistName}</span>
+                      <span>{pk.completedSessions || 0} of {pk.totalSessions} Sessions ({progress}%)</span>
+                    </div>
+
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-slate-400 italic">No active Panchakarma courses recorded.</p>
+            )}
           </div>
         </div>
 
-        {/* Sidebar Widgets: Active Doctors & Inventory Alerts */}
-        <div className="space-y-6">
-          {/* Active Doctors Panel */}
-          <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Stethoscope className="w-4 h-4 text-indigo-500" /> Active Doctors & Specialists
-            </h3>
-            <div className="space-y-2.5">
-              {data.doctors.length === 0 ? (
-                <p className="text-xs text-slate-400">No doctors registered.</p>
-              ) : (
-                data.doctors.map((doc) => (
-                  <div key={doc._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80">
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white text-xs">{doc.doctorName}</p>
-                      <p className="text-[11px] text-slate-400">{doc.specialization}</p>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40">
-                      ₹{doc.consultationFee}
-                    </span>
-                  </div>
-                ))
-              )}
+        {/* Today's Vaidya Consultations */}
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Today's Vaidya OP Schedule</h2>
             </div>
+            <Link to="/appointments" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+              View Appointments <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          {/* Low Stock Warnings Panel */}
-          <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-500" /> Low Stock Inventory
-              </h3>
-              <Link to="/pharmacy-inventory" className="text-xs font-semibold text-emerald-600 hover:underline">Manage</Link>
-            </div>
-            <div className="space-y-2">
-              {data.lowStockItems.length === 0 ? (
-                <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-2 py-2">
-                  <CheckCircle2 className="w-4 h-4" /> All medicine inventory optimal.
-                </div>
-              ) : (
-                data.lowStockItems.map((item) => (
-                  <div key={item._id} className="flex items-center justify-between text-xs p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 text-rose-900 dark:text-rose-200">
-                    <span className="font-medium">{item.name}</span>
-                    <span className="font-bold text-xs bg-rose-100 dark:bg-rose-900/60 px-2 py-0.5 rounded-md text-rose-900 dark:text-rose-100">
-                      {item.quantity} left
-                    </span>
+          <div className="space-y-3">
+            {appointments.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">No appointments scheduled for today.</p>
+            ) : (
+              appointments.map((appt) => (
+                <div key={appt._id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>Token #{appt.tokenNumber || 1}</span>
+                      <span>•</span>
+                      <span>{appt.patientName}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Vaidya: {appt.doctorName} • {appt.timeSlot}
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    appt.status === 'Completed'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
+                      : appt.status === 'In-Consultation'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                  }`}>
+                    {appt.status}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* On-Duty Vaidyas & Panchakarma Therapists */}
+      <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Hospital Vaidyas & Panchakarma Therapists
+            </h2>
+          </div>
+          <Link to="/doctors-staff" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+            Manage Staff <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {(data.doctors || []).map((doc) => (
+            <div key={doc._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm text-slate-900 dark:text-white">{doc.doctorName}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  {doc.staffType || 'Ayurvedic Practitioner'}
+                </span>
+              </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">{doc.specialization}</p>
+              <div className="text-[11px] text-slate-400 flex justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800">
+                <span>Fee: ₹{doc.consultationFee || 0}</span>
+                <span>{doc.availableDays?.length || 6} Days/Week</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

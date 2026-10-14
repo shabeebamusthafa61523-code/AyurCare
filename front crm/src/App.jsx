@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import SplashScreen from './components/SplashScreen';
 
 // Page Imports
 import { UserProvider } from './contexts/UserContext'; 
@@ -95,6 +96,7 @@ import BillingPage from './pages/BillingPage';
 import DoctorsStaffPage from './pages/DoctorsStaffPage';
 import PatientFollowUpPage from './pages/PatientFollowUpPage';
 import PolyclinicReportsPage from './pages/PolyclinicReportsPage';
+import PanchakarmaPage from './pages/PanchakarmaPage';
 
 
 
@@ -196,9 +198,13 @@ const LandingRoute = () => {
 };
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
-    <UserProvider><Router>
-      <Routes>
+    <UserProvider>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} minDuration={3000} />}
+      <Router>
+        <Routes>
         {/* Auth Routes - No Sidebar */}
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -214,6 +220,7 @@ function App() {
         <Route path="/laboratory" element={<ProtectedRoute><MainLayout><LaboratoryPage /></MainLayout></ProtectedRoute>} />
         <Route path="/pharmacy-inventory" element={<ProtectedRoute><MainLayout><PharmacyInventoryPage /></MainLayout></ProtectedRoute>} />
         <Route path="/billing" element={<ProtectedRoute><MainLayout><BillingPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/panchakarma" element={<ProtectedRoute><MainLayout><PanchakarmaPage /></MainLayout></ProtectedRoute>} />
         <Route path="/doctors-staff" element={<ProtectedRoute><MainLayout><DoctorsStaffPage /></MainLayout></ProtectedRoute>} />
         <Route path="/patient-followups" element={<ProtectedRoute><MainLayout><PatientFollowUpPage /></MainLayout></ProtectedRoute>} />
         <Route path="/polyclinic-reports" element={<ProtectedRoute><MainLayout><PolyclinicReportsPage /></MainLayout></ProtectedRoute>} />

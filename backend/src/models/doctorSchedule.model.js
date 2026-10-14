@@ -8,11 +8,25 @@ const doctorScheduleSchema = new mongoose.Schema({
     unique: true
   },
   doctorName: { type: String, required: true },
-  specialization: { type: String, default: 'General Medicine' },
+  staffType: {
+    type: String,
+    enum: ['Vaidya (Ayurvedic Physician)', 'Panchakarma Therapist', 'Ayurvedic Pharmacist', 'Care Coordinator'],
+    default: 'Vaidya (Ayurvedic Physician)'
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other'],
+    default: 'Female'
+  },
+  qualification: {
+    type: String,
+    default: 'BAMS, MD (Ayurveda)'
+  },
+  specialization: { type: String, default: 'Kayachikitsa & Panchakarma' },
   consultationFee: { type: Number, default: 500 },
   honorariumType: {
     type: String,
-    enum: ['Percentage', 'FixedPerConsultation'],
+    enum: ['Percentage', 'FixedPerConsultation', 'MonthlySalary'],
     default: 'Percentage'
   },
   honorariumRate: { type: Number, default: 70 }, // e.g. 70% or 350 INR
