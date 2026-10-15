@@ -15,7 +15,10 @@ import {
   HeartPulse,
   Leaf,
   Apple,
-  ShieldAlert
+  ShieldAlert,
+  Table,
+  Search,
+  PenTool
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -25,6 +28,8 @@ export default function DoctorEMRPage() {
   const [appointments, setAppointments] = useState([]);
   const [emrs, setEmrs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('table');
+  const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('ayurvedic'); // 'ayurvedic' | 'vitals' | 'pathya'
 
   // Confirmation Modal State
@@ -170,6 +175,43 @@ export default function DoctorEMRPage() {
     });
   };
 
+  const handleLoadEmrIntoForm = (item) => {
+    setFormData({
+      patient: item.patient?._id || item.patient || '',
+      patientName: item.patient?.name || item.patientName || '',
+      appointment: item.appointment || '',
+      doctorName: item.doctorName || 'Dr. Arya Warrier (BAMS, MD)',
+      symptoms: item.symptoms || '',
+      vitals: item.vitals || { bp: '120/80', pulse: '74', temp: '98.4 F', weight: '70 kg', spo2: '99%' },
+      allergies: item.allergies || '',
+      medicalHistory: item.medicalHistory || '',
+      diagnosis: item.diagnosis || '',
+      rogaNidana: item.rogaNidana || '',
+      dushyaDhatu: item.dushyaDhatu || '',
+      prakriti: item.prakriti || 'Vata-Pitta',
+      vikriti: item.vikriti || '',
+      agni: item.agni || 'Sama (Balanced)',
+      koshtha: item.koshtha || 'Madhyama (Regular)',
+      amaStatus: item.amaStatus || 'Niraama (Toxin Free)',
+      ashtavidhaPariksha: item.ashtavidhaPariksha || {},
+      chikitsaType: item.chikitsaType || 'Shamana (Palliative)',
+      treatmentPlan: item.treatmentPlan || '',
+      pathyaApathya: item.pathyaApathya || { pathyaAhara: '', apathyaAhara: '', pathyaVihara: '', apathyaVihara: '' },
+      consultationNotes: item.consultationNotes || '',
+      followUpDate: item.followUpDate ? item.followUpDate.split('T')[0] : ''
+    });
+    setViewMode('form');
+  };
+
+  const filteredEmrs = emrs.filter(e => {
+    const term = searchTerm.toLowerCase();
+    const patName = (e.patient?.name || e.patientName || '').toLowerCase();
+    const docName = (e.doctorName || '').toLowerCase();
+    const roga = (e.rogaNidana || e.diagnosis || '').toLowerCase();
+    const sym = (e.symptoms || '').toLowerCase();
+    return patName.includes(term) || docName.includes(term) || roga.includes(term) || sym.includes(term);
+  });
+
   return (
     <div className="p-2 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
@@ -185,9 +227,152 @@ export default function DoctorEMRPage() {
             Comprehensive Tridosha Prakriti & Vikriti profiling, Ashtavidha Pariksha (Nadi, Jihva, etc.), Agni/Kostha/Ama analysis, Roga Nidana, and Pathya-Apathya guidance.
           </p>
         </div>
+
+        <button
+          onClick={() => setViewMode(viewMode === 'table' ? 'form' : 'table')}
+          className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto"
+        >
+          {viewMode === 'table' ? (
+            <>
+              <Plus className="w-4 h-4" /> Start New Consultation
+            </>
+          ) : (
+            <>
+              <Table className="w-4 h-4" /> View Consultations Table
+            </>
+          )}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Filter & View Switcher Bar */}
+      <div className="bg-white dark:bg-[#111622] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search patient, doctor, diagnosis, symptoms..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/70 dark:border-slate-800 self-end md:self-auto">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              viewMode === 'table'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+            }`}
+          >
+            <Table className="w-3.5 h-3.5" /> Table View
+          </button>
+          <button
+            onClick={() => setViewMode('form')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              viewMode === 'form'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+            }`}
+          >
+            <PenTool className="w-3.5 h-3.5" /> Consultation Form
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        /* EMR Table View */
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+          {filteredEmrs.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-xs">
+              <Activity className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">No Consultation Records Found</h3>
+              <p className="mt-1">Perform Ashtavidha Pariksha and save your first Ayurvedic EMR record.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Consultation Date</th>
+                    <th className="py-3 px-4">Patient Details</th>
+                    <th className="py-3 px-4">Attending Vaidya</th>
+                    <th className="py-3 px-4">Prakriti & Dosha</th>
+                    <th className="py-3 px-4">Roga Nidana / Diagnosis</th>
+                    <th className="py-3 px-4">Nadi Pariksha</th>
+                    <th className="py-3 px-4">Treatment Plan</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  {filteredEmrs.map((item) => (
+                    <tr key={item._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-3 px-4 whitespace-nowrap text-slate-500">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {item.patient?.name || item.patientName || 'Patient'}
+                        </div>
+                        <div className="text-[11px] text-slate-500">{item.patient?.phone || 'No phone'}</div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Stethoscope className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{item.doctorName || 'Dr. Arya Warrier'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {item.prakriti ? (
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                            {item.prakriti}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Vata-Pitta</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 min-w-[180px]">
+                        <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                          {item.rogaNidana || item.diagnosis || 'Clinical Review'}
+                        </span>
+                        {item.symptoms && (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate block max-w-xs mt-0.5">
+                            {item.symptoms}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 min-w-[160px]">
+                        <span className="text-[11px] text-slate-700 dark:text-slate-300">
+                          {item.ashtavidhaPariksha?.nadi || 'Prakrita (Balanced)'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 min-w-[200px]">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate block max-w-xs">
+                          {item.treatmentPlan || item.chikitsaType || 'Prescription & Lifestyle'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => handleLoadEmrIntoForm(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800/60 shadow-sm transition"
+                          title="Open in EMR Consultation Editor"
+                        >
+                          <FileText className="w-3.5 h-3.5" /> View / Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Column */}
         <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-6">
           {/* Header & Tabs */}
@@ -697,6 +882,7 @@ export default function DoctorEMRPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Confirmation Modal */}
       <ConfirmationModal

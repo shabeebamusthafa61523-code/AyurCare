@@ -14,7 +14,10 @@ import {
   Apple,
   ShieldAlert,
   ChevronDown,
-  X
+  X,
+  Table,
+  Search,
+  PenTool
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -60,6 +63,8 @@ export default function PrescriptionsPage() {
   const [pharmacyItems, setPharmacyItems] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('table');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // New Prescription State
   const [selectedPatient, setSelectedPatient] = useState('');
@@ -207,6 +212,14 @@ export default function PrescriptionsPage() {
     }, 300);
   };
 
+  const filteredPrescriptions = prescriptions.filter(rx => {
+    const term = searchTerm.toLowerCase();
+    return (rx.prescriptionNo || '').toLowerCase().includes(term) ||
+           (rx.patientName || '').toLowerCase().includes(term) ||
+           (rx.doctorName || '').toLowerCase().includes(term) ||
+           (rx.medicines || []).some(m => (m.name || '').toLowerCase().includes(term));
+  });
+
   return (
     <div className="p-2 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
@@ -222,9 +235,138 @@ export default function PrescriptionsPage() {
             Specify classical formulation types (Kashayam, Tailam, Arishtam, Churnam), Anupana carriers, Ayurvedic administration timings (Sevana Kala), and Pathya-Apathya rules.
           </p>
         </div>
+
+        <button
+          onClick={() => setViewMode(viewMode === 'table' ? 'form' : 'table')}
+          className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto"
+        >
+          {viewMode === 'table' ? (
+            <>
+              <Plus className="w-4 h-4" /> Create New Prescription
+            </>
+          ) : (
+            <>
+              <Table className="w-4 h-4" /> View Prescriptions Table
+            </>
+          )}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Filter and View Toggle Bar */}
+      <div className="bg-white dark:bg-[#111622] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search Rx no, patient, doctor, medicine..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/70 dark:border-slate-800 self-end md:self-auto">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              viewMode === 'table'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+            }`}
+          >
+            <Table className="w-3.5 h-3.5" /> Table View
+          </button>
+          <button
+            onClick={() => setViewMode('form')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              viewMode === 'form'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+            }`}
+          >
+            <PenTool className="w-3.5 h-3.5" /> Prescription Builder
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        /* Prescriptions Table View */
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+          {filteredPrescriptions.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-xs">
+              <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">No Prescriptions Found</h3>
+              <p className="mt-1">Create digital prescriptions for patients with classical Ayurvedic formulations.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Rx Number</th>
+                    <th className="py-3 px-4">Patient Name</th>
+                    <th className="py-3 px-4">Attending Vaidya</th>
+                    <th className="py-3 px-4">Prescribed Medicines (Aushadhi)</th>
+                    <th className="py-3 px-4">Pathya & Diet Guidelines</th>
+                    <th className="py-3 px-4">Date Issued</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  {filteredPrescriptions.map((rx) => (
+                    <tr key={rx._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          {rx.prescriptionNo}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-900 dark:text-white">{rx.patientName}</div>
+                        {rx.patientId && <div className="text-[11px] text-slate-500">ID: {rx.patientId}</div>}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Stethoscope className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{rx.doctorName || 'Assigned Vaidya'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 min-w-[220px]">
+                        <div className="flex flex-wrap gap-1.5">
+                          {(rx.medicines || []).map((m, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
+                              <Droplet className="w-2.5 h-2.5 text-emerald-600" />
+                              <span>{m.name}</span>
+                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">({m.form})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 min-w-[180px]">
+                        <p className="text-slate-600 dark:text-slate-300 truncate max-w-xs text-[11px]">
+                          {rx.pathyaApathyaNotes || 'Standard classical diet'}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap text-slate-500">
+                        {new Date(rx.date || rx.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => handlePrintRx(rx)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800/60 shadow-sm transition"
+                          title="Print Prescription Slip"
+                        >
+                          <Printer className="w-3.5 h-3.5" /> Print
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Prescription Generation Form */}
         <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -465,6 +607,7 @@ export default function PrescriptionsPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Printable Prescription Modal (hidden on screen, visible during window.print) */}
       {previewRx && (

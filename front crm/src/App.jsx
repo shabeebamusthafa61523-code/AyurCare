@@ -97,6 +97,7 @@ import DoctorsStaffPage from './pages/DoctorsStaffPage';
 import PatientFollowUpPage from './pages/PatientFollowUpPage';
 import PolyclinicReportsPage from './pages/PolyclinicReportsPage';
 import PanchakarmaPage from './pages/PanchakarmaPage';
+import ServicesPage from './pages/ServicesPage';
 
 
 
@@ -214,6 +215,7 @@ function App() {
         <Route path="/polyclinic-dashboard" element={<ProtectedRoute><MainLayout><PolyclinicDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/patient-enquiries" element={<ProtectedRoute><MainLayout><PatientEnquiriesPage /></MainLayout></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><MainLayout><AppointmentsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/services" element={<ProtectedRoute><MainLayout><ServicesPage /></MainLayout></ProtectedRoute>} />
         <Route path="/reception-queue" element={<ProtectedRoute><MainLayout><ReceptionQueuePage /></MainLayout></ProtectedRoute>} />
         <Route path="/doctor-emr" element={<ProtectedRoute><MainLayout><DoctorEMRPage /></MainLayout></ProtectedRoute>} />
         <Route path="/prescriptions" element={<ProtectedRoute><MainLayout><PrescriptionsPage /></MainLayout></ProtectedRoute>} />

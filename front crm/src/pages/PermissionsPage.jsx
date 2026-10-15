@@ -32,6 +32,7 @@ export const ALL_SYSTEM_MODULES = [
   // --- PATIENT CRM & BOOKING ---
   { label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Patient CRM & Booking', desc: 'Patient lead enquiry registration & appointment conversion' },
   { label: 'Appointments', path: '/appointments', category: 'Patient CRM & Booking', desc: 'Doctor slot booking & appointment management' },
+  { label: 'Services', path: '/services', category: 'Patient CRM & Booking', desc: 'Ayurvedic treatments, consultation fees & therapy durations' },
   { label: 'Patient Follow-ups', path: '/patient-followups', category: 'Patient CRM & Booking', desc: 'Post-consultation follow-up reminders & care plans' },
 
   // --- CLINICAL EMR & LAB ---

@@ -30,7 +30,11 @@ import {
   createPanchakarmaBooking,
   updatePanchakarmaBooking,
   logPanchakarmaSession,
-  deletePanchakarmaBooking
+  deletePanchakarmaBooking,
+  getClinicServices,
+  createClinicService,
+  updateClinicService,
+  deleteClinicService
 } from '../controllers/polyclinic.controller.js';
 import protectRoute from '../middleware/auth.middleware.js';
 
@@ -91,5 +95,12 @@ router.post('/panchakarma', createPanchakarmaBooking);
 router.put('/panchakarma/:id', updatePanchakarmaBooking);
 router.post('/panchakarma/:id/session', logPanchakarmaSession);
 router.delete('/panchakarma/:id', deletePanchakarmaBooking);
+
+// Clinic Services Management
+router.get('/services', getClinicServices);
+router.post('/services', createClinicService);
+router.patch('/services/:id', updateClinicService);
+router.put('/services/:id', updateClinicService);
+router.delete('/services/:id', deleteClinicService);
 
 export default router;

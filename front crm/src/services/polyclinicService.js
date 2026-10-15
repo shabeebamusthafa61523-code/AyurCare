@@ -158,5 +158,23 @@ export const polyclinicService = {
   deletePanchakarmaBooking: async (id) => {
     const res = await axios.delete(`${API_URL}/v1/polyclinic/panchakarma/${id}`, getAuthHeaders());
     return res.data;
+  },
+
+  // Clinic Services Management
+  getServices: async () => {
+    const res = await axios.get(`${API_URL}/v1/polyclinic/services`, getAuthHeaders());
+    return res.data;
+  },
+  createService: async (data) => {
+    const res = await axios.post(`${API_URL}/v1/polyclinic/services`, data, getAuthHeaders());
+    return res.data;
+  },
+  updateService: async (id, data) => {
+    const res = await axios.patch(`${API_URL}/v1/polyclinic/services/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deleteService: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/services/${id}`, getAuthHeaders());
+    return res.data;
   }
 };

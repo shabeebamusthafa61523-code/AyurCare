@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Clock, Stethoscope, CheckCircle2, User, Plus, Search, Filter, Phone, MessageSquare, AlertCircle, X } from 'lucide-react';
+import { Calendar, Clock, Stethoscope, CheckCircle2, User, Plus, Search, Filter, Phone, MessageSquare, AlertCircle, X, Sparkles, Table, LayoutGrid } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientDetailsModal from '../components/PatientDetailsModal';
@@ -9,8 +9,10 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   const [selectedPatientIdForDetails, setSelectedPatientIdForDetails] = useState(null);
 
   // Book Appointment Modal State
@@ -18,6 +20,7 @@ export default function AppointmentsPage() {
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [apptData, setApptData] = useState({
     doctor: '',
+    service: '',
     date: new Date().toISOString().split('T')[0],
     timeSlot: '10:00 AM - 10:30 AM',
     consultationFee: 600,
@@ -65,8 +68,13 @@ export default function AppointmentsPage() {
         setApptData(prev => ({
           ...prev,
           doctor: firstDoc.doctor?._id || firstDoc._id,
-          consultationFee: firstDoc.consultationFee || 600
+          consultationFee: prev.consultationFee || firstDoc.consultationFee || 500
         }));
+      }
+
+      const sRes = await polyclinicService.getServices();
+      if (sRes.success && sRes.services) {
+        setServices(sRes.services.filter(s => s.status !== 'Inactive'));
       }
     } catch (err) {
       console.error(err);
@@ -75,11 +83,29 @@ export default function AppointmentsPage() {
 
   const handleDoctorChange = (docId) => {
     const doc = doctors.find(d => (d.doctor?._id || d._id) === docId);
-    setApptData({
-      ...apptData,
+    setApptData(prev => ({
+      ...prev,
       doctor: docId,
-      consultationFee: doc?.consultationFee || 600
-    });
+      consultationFee: prev.service ? prev.consultationFee : (doc?.consultationFee || 500)
+    }));
+  };
+
+  const handleServiceChange = (serviceId) => {
+    const selectedS = services.find(s => s._id === serviceId);
+    if (selectedS) {
+      setApptData(prev => ({
+        ...prev,
+        service: serviceId,
+        consultationFee: selectedS.price
+      }));
+    } else {
+      const doc = doctors.find(d => (d.doctor?._id || d._id) === apptData.doctor);
+      setApptData(prev => ({
+        ...prev,
+        service: '',
+        consultationFee: doc?.consultationFee || 500
+      }));
+    }
   };
 
   const handleBookSubmit = async (e) => {
@@ -98,6 +124,7 @@ export default function AppointmentsPage() {
 
     const patient = patients.find(p => p._id === selectedPatientId);
     const selectedDoc = doctors.find(d => (d.doctor?._id || d._id) === apptData.doctor);
+    const selectedS = services.find(s => s._id === apptData.service);
 
     try {
       const res = await polyclinicService.createAppointment({
@@ -107,9 +134,15 @@ export default function AppointmentsPage() {
         doctor: apptData.doctor,
         doctorName: selectedDoc?.doctorName || 'Dr. General',
         specialization: selectedDoc?.specialization || 'General Medicine',
+        service: apptData.service || null,
+        serviceName: selectedS?.name || '',
+        serviceCategory: selectedS?.category || '',
+        serviceDuration: selectedS?.duration || '',
+        servicePrice: Number(apptData.consultationFee) || 0,
+        appointmentType: selectedS?.category?.includes('Panchakarma') ? 'Panchakarma Therapy Session' : 'Doctor Consultation',
         date: apptData.date,
         timeSlot: apptData.timeSlot,
-        consultationFee: Number(apptData.consultationFee) || 600,
+        consultationFee: Number(apptData.consultationFee) || 500,
         notes: apptData.notes,
         status: 'Scheduled'
       });
@@ -195,6 +228,30 @@ export default function AppointmentsPage() {
             <Plus className="w-4 h-4" /> Book OP Slot
           </button>
 
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/70 dark:border-slate-800">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              <Table className="w-3.5 h-3.5" /> Table View
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+            </button>
+          </div>
+
           {/* Status Filter Tabs */}
           <div className="flex flex-wrap items-center gap-1 bg-slate-50 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-800/80">
             {['All', 'Scheduled', 'Checked-In', 'In-Consultation', 'Completed', 'Cancelled'].map((status) => (
@@ -214,14 +271,146 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          <div className="col-span-full text-center py-12 text-slate-400 text-xs">Loading appointments...</div>
-        ) : filteredAppointments.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-slate-400 text-xs">No appointments found for selected filter.</div>
-        ) : (
-          filteredAppointments.map((appt) => (
+      {/* Appointments List / Table */}
+      {loading ? (
+        <div className="text-center py-12 text-slate-400 text-xs">Loading appointments...</div>
+      ) : filteredAppointments.length === 0 ? (
+        <div className="text-center py-12 text-slate-400 text-xs bg-white dark:bg-[#111622] rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8">
+          No appointments found for selected filter.
+        </div>
+      ) : viewMode === 'table' ? (
+        /* TABLE VIEW */
+        <div className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left text-slate-600 dark:text-slate-300">
+              <thead className="uppercase bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-semibold tracking-wider text-[11px]">
+                <tr>
+                  <th className="py-3.5 px-4 font-bold">Token &amp; ID</th>
+                  <th className="py-3.5 px-4 font-bold">Patient Details</th>
+                  <th className="py-3.5 px-4 font-bold">Doctor / Vaidya</th>
+                  <th className="py-3.5 px-4 font-bold">Treatment / Service</th>
+                  <th className="py-3.5 px-4 font-bold">Date &amp; Time Slot</th>
+                  <th className="py-3.5 px-4 font-bold">Fee (₹)</th>
+                  <th className="py-3.5 px-4 font-bold">Status</th>
+                  <th className="py-3.5 px-4 font-bold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                {filteredAppointments.map((appt) => (
+                  <tr key={appt._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                    <td className="py-3.5 px-4">
+                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-900/40 font-mono">
+                        #{appt.tokenNumber || 1}
+                      </span>
+                      {appt.appointmentNo && (
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{appt.appointmentNo}</div>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div 
+                        onClick={() => setSelectedPatientIdForDetails(appt.patient)}
+                        className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer hover:underline"
+                        title="Click to view full patient history"
+                      >
+                        {appt.patientName} &rarr;
+                      </div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" /> {appt.patientPhone}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-slate-900 dark:text-white">{appt.doctorName}</div>
+                      <div className="text-[10px] text-slate-400">{appt.specialization || 'Ayurvedic Medicine'}</div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {appt.serviceName ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-semibold">
+                          <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span className="truncate max-w-[150px]">{appt.serviceName}</span>
+                          {appt.serviceDuration && <span className="text-[10px] text-slate-400 font-normal">({appt.serviceDuration})</span>}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">General Consultation</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="text-slate-800 dark:text-slate-200 font-medium">
+                        {new Date(appt.date).toLocaleDateString()}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">{appt.timeSlot}</div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                        ₹{appt.consultationFee}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-block ${
+                        appt.status === 'Checked-In' ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50' :
+                        appt.status === 'In-Consultation' ? 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50' :
+                        appt.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50' :
+                        appt.status === 'Cancelled' ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50' :
+                        'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                      }`}>
+                        {appt.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <button
+                          onClick={() => requestReminder(appt)}
+                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                          title="WhatsApp Reminder"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
+
+                        {appt.status === 'Scheduled' && (
+                          <>
+                            <button
+                              onClick={() => requestStatusChange(appt, 'Checked-In')}
+                              className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[10px] transition"
+                            >
+                              Check In
+                            </button>
+                            <button
+                              onClick={() => requestStatusChange(appt, 'Cancelled')}
+                              className="px-1.5 py-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-[10px] transition"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+
+                        {appt.status === 'Checked-In' && (
+                          <button
+                            onClick={() => requestStatusChange(appt, 'In-Consultation')}
+                            className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-[10px] transition"
+                          >
+                            Call Cabin
+                          </button>
+                        )}
+
+                        {appt.status === 'In-Consultation' && (
+                          <button
+                            onClick={() => requestStatusChange(appt, 'Completed')}
+                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] transition"
+                          >
+                            Complete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* Cards Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAppointments.map((appt) => (
             <div key={appt._id} className="bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -250,6 +439,16 @@ export default function AppointmentsPage() {
                   </h3>
                   <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {appt.patientPhone}</p>
                 </div>
+
+                {appt.serviceName && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-xs">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 truncate">{appt.serviceName}</span>
+                    {appt.serviceDuration && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">({appt.serviceDuration})</span>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -303,9 +502,9 @@ export default function AppointmentsPage() {
                 )}
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal: Book Appointment */}
       {showBookModal && createPortal(
@@ -350,6 +549,47 @@ export default function AppointmentsPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Select Treatment / Service
+                    </label>
+                    <span className="text-[10px] text-slate-400">Optional</span>
+                  </div>
+                  <select 
+                    value={apptData.service}
+                    onChange={(e) => handleServiceChange(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-semibold"
+                  >
+                    <option value="">-- General Vaidya Consultation (Default) --</option>
+                    {services.map(s => (
+                      <option key={s._id} value={s._id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
+                      </option>
+                    ))}
+                  </select>
+
+                  {apptData.service && (() => {
+                    const s = services.find(x => x._id === apptData.service);
+                    return s ? (
+                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-500/20">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>{s.category}</span>
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                            <Clock className="w-3 h-3" /> {s.duration}
+                          </span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                            ₹{s.price}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div>

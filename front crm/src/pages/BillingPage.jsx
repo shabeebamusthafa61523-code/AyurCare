@@ -66,12 +66,15 @@ export default function BillingPage() {
         const fetchedItems = [];
         const { appointments, labTests, prescriptions, panchakarma } = res.history;
 
-        // 1. Doctor Consultations
+        // 1. Doctor Consultations & Ayurvedic Services
         if (appointments && appointments.length > 0) {
           appointments.forEach(appt => {
+            const desc = appt.serviceName 
+              ? `Ayurvedic Service: ${appt.serviceName}${appt.serviceDuration ? ` (${appt.serviceDuration})` : ''} - Vaidya: ${appt.doctorName || 'Doctor'}`
+              : `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`;
             fetchedItems.push({
-              description: `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`,
-              category: 'Consultation',
+              description: desc,
+              category: appt.serviceCategory || 'Consultation',
               qty: 1,
               unitPrice: appt.consultationFee || 500,
               amount: appt.consultationFee || 500

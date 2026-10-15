@@ -10,6 +10,7 @@ import DoctorSchedule from '../models/doctorSchedule.model.js';
 import User from '../models/user.model.js';
 import Lead from '../models/lead.model.js';
 import Panchakarma from '../models/panchakarma.model.js';
+import ClinicService from '../models/clinicService.model.js';
 
 // Seed Initial Ayurvedic Hospital Demo Data
 export const seedPolyclinicData = async () => {
@@ -514,6 +515,87 @@ export const seedPolyclinicData = async () => {
 
       console.log('✅ Authentic Ayurvedic Hospital demo data successfully seeded!');
     }
+
+    // Seed Clinic Services if none exist
+    const serviceCount = await ClinicService.countDocuments();
+    if (serviceCount === 0) {
+      console.log('🌿 Seeding authentic Ayurvedic clinic services...');
+      await ClinicService.insertMany([
+        {
+          name: 'General Vaidya Consultation',
+          category: 'Consultation',
+          price: 500,
+          duration: '30 mins',
+          description: 'Comprehensive Ashtavidha Pariksha, Nadi Pariksha (pulse analysis), and personalized Ayurvedic diet & lifestyle advice.',
+          status: 'Active'
+        },
+        {
+          name: 'Senior Vaidya / Kayachikitsa Specialist Consultation',
+          category: 'Consultation',
+          price: 800,
+          duration: '45 mins',
+          description: 'Specialist consultation for chronic ailments, metabolic disorders, and autoimmune conditions.',
+          status: 'Active'
+        },
+        {
+          name: 'Shirodhara (Continuous Medicated Oil Flow)',
+          category: 'Panchakarma Therapy',
+          price: 1500,
+          duration: '60 mins',
+          description: 'Continuous pouring of warm medicated herbal oil (Ksheerabala/Brahmi) onto the forehead for stress relief, insomnia, and nervous disorders.',
+          status: 'Active'
+        },
+        {
+          name: 'Abhyanga (Classical Full Body Herbal Massage)',
+          category: 'Panchakarma Therapy',
+          price: 1200,
+          duration: '60 mins',
+          description: 'Rhythmic, synchronized whole-body warm herbal oil massage to tone tissues, nourish skin, and pacify aggravated Vata.',
+          status: 'Active'
+        },
+        {
+          name: 'Janu Basti (Knee Joint Oil Pool Therapy)',
+          category: 'Panchakarma Therapy',
+          price: 1000,
+          duration: '45 mins',
+          description: 'Warm medicated oil retained in a herbal dough ring around the knees for osteoarthritis, stiffness, and joint mobility.',
+          status: 'Active'
+        },
+        {
+          name: 'Kati Basti (Lumbar Spine Therapy)',
+          category: 'Panchakarma Therapy',
+          price: 1100,
+          duration: '45 mins',
+          description: 'Localized warm medicated oil pooling on the lumbosacral region for back pain, sciatica, and disc conditions.',
+          status: 'Active'
+        },
+        {
+          name: 'Njavarakizhi (Shashtika Shali Pinda Sweda)',
+          category: 'Panchakarma Therapy',
+          price: 1800,
+          duration: '60 mins',
+          description: 'Nourishing bolus massage using red rice cooked in milk and herbal decoction for neuromuscular strength and rejuvenation.',
+          status: 'Active'
+        },
+        {
+          name: 'Mukhalepam & Herbal Facial Care',
+          category: 'Wellness & Rejuvenation',
+          price: 800,
+          duration: '45 mins',
+          description: 'Traditional facial cleansing, herbal massage, and Ayurvedic ubtan pack for glowing complexion.',
+          status: 'Active'
+        },
+        {
+          name: 'Nadi Pariksha & Diet Counseling Review',
+          category: 'Consultation',
+          price: 600,
+          duration: '30 mins',
+          description: 'Ayurvedic pulse examination, dosha balance evaluation, and seasonal Pathya-Apathya guidelines.',
+          status: 'Active'
+        }
+      ]);
+      console.log('✅ Ayurvedic clinic services seeded successfully!');
+    }
   } catch (err) {
     console.error('⚠️ Ayurvedic Hospital seeding notice:', err.message);
   }
@@ -713,6 +795,22 @@ export const createAppointment = async (req, res) => {
     const todayCount = await Appointment.countDocuments({ date: { $gte: dateStart, $lte: dateEnd } });
     const tokenNumber = todayCount + 1;
 
+    let serviceId = req.body.service || req.body.serviceId || null;
+    let serviceName = req.body.serviceName || '';
+    let serviceCategory = req.body.serviceCategory || '';
+    let servicePrice = req.body.servicePrice !== undefined ? Number(req.body.servicePrice) : 0;
+    let serviceDuration = req.body.serviceDuration || '';
+
+    if (serviceId) {
+      const s = await ClinicService.findById(serviceId);
+      if (s) {
+        if (!serviceName) serviceName = s.name;
+        if (!serviceCategory) serviceCategory = s.category;
+        if (!servicePrice) servicePrice = s.price;
+        if (!serviceDuration) serviceDuration = s.duration;
+      }
+    }
+
     const appointment = await Appointment.create({
       ...req.body,
       patient: patientId,
@@ -722,6 +820,11 @@ export const createAppointment = async (req, res) => {
       timeSlot,
       appointmentNo,
       tokenNumber,
+      service: serviceId || null,
+      serviceName,
+      serviceCategory,
+      servicePrice: servicePrice || Number(req.body.consultationFee) || 0,
+      serviceDuration,
       patientName: patientName || 'Patient',
       patientPhone: patientPhone || ''
     });
@@ -729,6 +832,92 @@ export const createAppointment = async (req, res) => {
     res.status(201).json({ success: true, appointment, data: appointment });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const createInvoiceForCompletedAppointment = async (appointmentId) => {
+  try {
+    const appt = await Appointment.findById(appointmentId).populate('patient');
+    if (!appt) return null;
+
+    // Check if an invoice already exists for this appointment
+    const existing = await Billing.findOne({ appointment: appt._id });
+    if (existing) return existing;
+
+    let patientId = appt.patient?._id || appt.patient;
+    let patientName = appt.patientName || appt.patient?.name || 'Patient';
+
+    if (!patientId) {
+      if (appt.patientPhone) {
+        const found = await Patient.findOne({ phone: appt.patientPhone });
+        if (found) {
+          patientId = found._id;
+          if (!patientName) patientName = found.name;
+        }
+      }
+      if (!patientId) {
+        const anyPatient = await Patient.findOne();
+        if (anyPatient) {
+          patientId = anyPatient._id;
+          if (!patientName) patientName = anyPatient.name;
+        }
+      }
+    }
+
+    if (!patientId) return null;
+
+    const count = await Billing.countDocuments();
+    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
+
+    const serviceName = appt.serviceName || appt.appointmentType || 'Vaidya Consultation';
+    let mappedCategory = 'Consultation';
+    const catLower = (appt.serviceCategory || '').toLowerCase();
+    if (catLower.includes('panchakarma') || catLower.includes('therapy') || catLower.includes('kriya') || catLower.includes('wellness')) {
+      mappedCategory = 'Panchakarma / Therapy';
+    } else if (catLower.includes('package')) {
+      mappedCategory = 'Therapy Package';
+    }
+
+    const price = Number(appt.servicePrice || appt.consultationFee || 500);
+    const desc = appt.serviceName
+      ? `Ayurvedic Service: ${appt.serviceName}${appt.serviceDuration ? ` (${appt.serviceDuration})` : ''} - Vaidya: ${appt.doctorName || 'Doctor'}`
+      : `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`;
+
+    const items = [{
+      description: desc,
+      category: mappedCategory,
+      qty: 1,
+      unitPrice: price,
+      amount: price
+    }];
+
+    const totalAmount = price;
+    const netAmount = price;
+    const paidAmount = 0;
+    const pendingAmount = price;
+    const status = 'Pending';
+
+    const invoice = await Billing.create({
+      invoiceNo,
+      patient: patientId,
+      patientName,
+      appointment: appt._id,
+      items,
+      totalAmount,
+      discount: 0,
+      tax: 0,
+      netAmount,
+      paidAmount,
+      pendingAmount,
+      status,
+      paymentMode: 'Cash',
+      date: new Date()
+    });
+
+    return invoice;
+  } catch (err) {
+    console.error('Error auto-creating invoice for completed appointment:', err);
+    return null;
   }
 };
 
@@ -741,6 +930,12 @@ export const updateAppointmentStatus = async (req, res) => {
     if (status === 'Completed') updateFields.consultationEndTime = new Date();
 
     const appointment = await Appointment.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+
+    // If appointment is completed, auto-generate service invoice!
+    if (status === 'Completed' && appointment) {
+      await createInvoiceForCompletedAppointment(appointment._id);
+    }
+
     res.json({ success: true, appointment, data: appointment });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -795,6 +990,7 @@ export const createEmrRecord = async (req, res) => {
     // Update appointment status to Completed if appointment ID provided
     if (req.body.appointment) {
       await Appointment.findByIdAndUpdate(req.body.appointment, { status: 'Completed', consultationEndTime: new Date() });
+      await createInvoiceForCompletedAppointment(req.body.appointment);
     }
 
     // Auto create follow-up reminder if followUpDate is specified
@@ -944,7 +1140,13 @@ export const updatePharmacyItem = async (req, res) => {
 // 8. Billing & Invoicing
 export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Billing.find().sort({ createdAt: -1 });
+    // Auto-generate invoices for any completed appointments that don't have an invoice yet
+    const completedAppts = await Appointment.find({ status: 'Completed' });
+    for (const appt of completedAppts) {
+      await createInvoiceForCompletedAppointment(appt._id);
+    }
+
+    const invoices = await Billing.find().populate('patient').sort({ createdAt: -1 });
     res.json({ success: true, invoices, data: invoices });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1161,4 +1363,79 @@ export const deletePanchakarmaBooking = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// --- CLINIC SERVICES CONTROLLERS ---
+
+export const getClinicServices = async (req, res) => {
+  try {
+    const serviceCount = await ClinicService.countDocuments();
+    if (serviceCount === 0) {
+      await seedPolyclinicData();
+    }
+    const services = await ClinicService.find().sort({ category: 1, name: 1 });
+    res.json({ success: true, services, data: services });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const createClinicService = async (req, res) => {
+  try {
+    const { name, category, price, duration, description, status } = req.body;
+    if (!name || !category || price === undefined || !duration) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, category, price, and duration are required fields.'
+      });
+    }
+
+    const service = await ClinicService.create({
+      name: name.trim(),
+      category: category.trim(),
+      price: Number(price),
+      duration: duration.trim(),
+      description: description ? description.trim() : '',
+      status: status || 'Active'
+    });
+
+    res.status(201).json({ success: true, service, data: service });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updateClinicService = async (req, res) => {
+  try {
+    const { name, category, price, duration, description, status } = req.body;
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (category) updateData.category = category.trim();
+    if (price !== undefined) updateData.price = Number(price);
+    if (duration) updateData.duration = duration.trim();
+    if (description !== undefined) updateData.description = description.trim();
+    if (status) updateData.status = status;
+
+    const service = await ClinicService.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Service not found' });
+    }
+
+    res.json({ success: true, service, data: service });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteClinicService = async (req, res) => {
+  try {
+    const service = await ClinicService.findByIdAndDelete(req.params.id);
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Service not found' });
+    }
+    res.json({ success: true, message: 'Service deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 
