@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   PhoneCall, 
@@ -13,7 +13,12 @@ import {
   ArrowRight,
   Filter,
   Activity,
-  X
+  X,
+  Edit2,
+  Trash2,
+  History,
+  Users,
+  FileText
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -24,6 +29,7 @@ export default function PatientEnquiriesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingPatientId, setEditingPatientId] = useState(null);
   const [selectedPatientForAppt, setSelectedPatientForAppt] = useState(null);
   const [showApptModal, setShowApptModal] = useState(false);
   const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
@@ -54,6 +60,22 @@ export default function PatientEnquiriesPage() {
     notes: '',
     status: 'New'
   });
+
+  const [showPhoneDropdown, setShowPhoneDropdown] = useState(true);
+
+  // Check if entered phone number matches any existing patients under ANY name
+  const phoneMatches = useMemo(() => {
+    const raw = (newPatient.phone || '').trim();
+    const digits = raw.replace(/\D/g, '');
+    if (!digits || digits.length < 4) return [];
+
+    return patients.filter(p => {
+      if (editingPatientId && p._id === editingPatientId) return false;
+      const pDigits = (p.phone || '').replace(/\D/g, '');
+      if (!pDigits) return false;
+      return pDigits.includes(digits) || (digits.length >= 7 && pDigits.endsWith(digits.slice(-10)));
+    });
+  }, [patients, newPatient.phone, editingPatientId]);
 
   // Appointment Form State
   const [apptData, setApptData] = useState({
@@ -89,6 +111,32 @@ export default function PatientEnquiriesPage() {
   const handleCreatePatient = async (e) => {
     e.preventDefault();
     try {
+      if (editingPatientId) {
+        const res = await polyclinicService.updatePatient(editingPatientId, {
+          ...newPatient,
+          age: Number(newPatient.age) || 30
+        });
+        if (res.success) {
+          setShowModal(false);
+          setEditingPatientId(null);
+          setNewPatient({
+            name: '',
+            phone: '',
+            email: '',
+            gender: 'Male',
+            age: '',
+            bloodGroup: 'O+',
+            prakriti: 'Unknown',
+            dietHabit: 'Vegetarian',
+            address: '',
+            notes: '',
+            status: 'New'
+          });
+          fetchData();
+        }
+        return;
+      }
+
       const res = await polyclinicService.createPatient({
         ...newPatient,
         age: Number(newPatient.age) || 30
@@ -102,6 +150,8 @@ export default function PatientEnquiriesPage() {
           gender: 'Male',
           age: '',
           bloodGroup: 'O+',
+          prakriti: 'Unknown',
+          dietHabit: 'Vegetarian',
           address: '',
           notes: '',
           status: 'New'
@@ -111,6 +161,46 @@ export default function PatientEnquiriesPage() {
     } catch (err) {
       alert(err.response?.data?.message || err.message);
     }
+  };
+
+  const handleOpenEditPatient = (patient) => {
+    setEditingPatientId(patient._id);
+    setNewPatient({
+      name: patient.name || '',
+      phone: patient.phone || '',
+      email: patient.email || '',
+      gender: patient.gender || 'Male',
+      age: patient.age || '',
+      bloodGroup: patient.bloodGroup || 'O+',
+      prakriti: patient.prakriti || 'Unknown',
+      dietHabit: patient.dietHabit || 'Vegetarian',
+      address: patient.address || '',
+      notes: patient.notes || '',
+      status: patient.status || 'New'
+    });
+    setShowModal(true);
+  };
+
+  const handleDeletePatient = (patient) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Patient Record',
+      message: `Are you sure you want to permanently delete patient profile for "${patient.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Patient',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await polyclinicService.deletePatient(patient._id);
+          if (res.success) {
+            fetchData();
+          } else {
+            alert(res.message || 'Failed to delete patient');
+          }
+        } catch (err) {
+          alert(err.message || 'Error deleting patient');
+        }
+      }
+    });
   };
 
   const handleBookAppt = async (e) => {
@@ -177,8 +267,24 @@ export default function PatientEnquiriesPage() {
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-sm transition text-xs"
+          onClick={() => {
+            setEditingPatientId(null);
+            setNewPatient({
+              name: '',
+              phone: '',
+              email: '',
+              gender: 'Male',
+              age: '',
+              bloodGroup: 'O+',
+              prakriti: 'Unknown',
+              dietHabit: 'Vegetarian',
+              address: '',
+              notes: '',
+              status: 'New'
+            });
+            setShowModal(true);
+          }}
+          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-sm transition text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Register Patient Lead
         </button>
@@ -207,7 +313,7 @@ export default function PatientEnquiriesPage() {
                 <th className="py-3.5 px-4">Age / Gender</th>
                 <th className="py-3.5 px-4">Blood Group</th>
                 <th className="py-3.5 px-4">Enquiry Notes</th>
-                <th className="py-3.5 px-4">Actions</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -244,8 +350,8 @@ export default function PatientEnquiriesPage() {
                       </span>
                       {patient.notes || 'General consultation'}
                     </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center gap-2 justify-end">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -268,6 +374,30 @@ export default function PatientEnquiriesPage() {
                         >
                           <Calendar className="w-3.5 h-3.5" /> Book Appt
                         </button>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditPatient(patient);
+                            }}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Edit Patient Details"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePatient(patient);
+                            }}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Delete Patient Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -287,10 +417,10 @@ export default function PatientEnquiriesPage() {
             <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <UserPlus className="w-4.5 h-4.5 text-emerald-500" /> Register New Patient Lead
+                  <UserPlus className="w-4.5 h-4.5 text-emerald-500" /> {editingPatientId ? 'Update Patient Lead Details' : 'Register New Patient Lead'}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Record patient demographic information, contact details, and symptoms.
+                  {editingPatientId ? 'Modify patient demographic information, Prakriti and notes.' : 'Record patient demographic information, contact details, and symptoms.'}
                 </p>
               </div>
               <button 
@@ -319,16 +449,102 @@ export default function PatientEnquiriesPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="relative">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number *</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="+91 9876543210"
-                      value={newPatient.phone}
-                      onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
-                    />
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="+91 9876543210"
+                        value={newPatient.phone}
+                        onChange={(e) => {
+                          setNewPatient({ ...newPatient, phone: e.target.value });
+                          setShowPhoneDropdown(true);
+                        }}
+                        onFocus={() => setShowPhoneDropdown(true)}
+                        className={`w-full bg-slate-50 dark:bg-slate-900 border rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white transition ${
+                          phoneMatches.length > 0
+                            ? 'border-amber-400 ring-1 ring-amber-400/40 dark:border-amber-500'
+                            : 'border-slate-200 dark:border-slate-800'
+                        }`}
+                      />
+                      {phoneMatches.length > 0 && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                          <Users className="w-2.5 h-2.5" /> {phoneMatches.length} existing record{phoneMatches.length > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Dropdown showing other patient profiles / history with this phone number */}
+                    {showPhoneDropdown && phoneMatches.length > 0 && (
+                      <div className="absolute left-0 right-0 sm:w-[360px] top-full mt-1.5 z-50 bg-white dark:bg-[#161d2b] border border-amber-300 dark:border-amber-700 rounded-2xl shadow-2xl p-2.5 space-y-2 max-h-80 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/60 dark:border-amber-900/40">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-200">
+                            <History className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <span>Existing Patient History for {newPatient.phone}:</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowPhoneDropdown(false)}
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                          Found {phoneMatches.length} profile(s) sharing this phone number under different or existing names:
+                        </p>
+
+                        <div className="space-y-1.5">
+                          {phoneMatches.map(match => (
+                            <div
+                              key={match._id}
+                              className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/80 dark:border-slate-700 space-y-1.5"
+                            >
+                              <div className="flex items-start justify-between gap-1.5">
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-xs text-slate-900 dark:text-white">{match.name}</span>
+                                    <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                      {match.patientId || 'PAT'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                    <span>{match.gender || 'Patient'}, {match.age || '—'} yrs</span>
+                                    <span>•</span>
+                                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{match.prakriti || 'Tridoshic'}</span>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPatientForDetails(match._id)}
+                                  className="px-2 py-1 text-[10px] font-bold rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-blue-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition flex items-center gap-0.5 shrink-0"
+                                >
+                                  <FileText className="w-2.5 h-2.5" /> View History
+                                </button>
+                              </div>
+                              {match.address && (
+                                <div className="text-[10px] text-slate-500 truncate">
+                                  Address: {match.address}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-1.5 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400">Registering family member?</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowPhoneDropdown(false)}
+                            className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                          >
+                            Continue registration →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Age *</label>
@@ -431,9 +647,9 @@ export default function PatientEnquiriesPage() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-5 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl transition shadow-md shadow-emerald-500/20"
+                  className="px-5 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl transition shadow-md shadow-emerald-500/20 cursor-pointer"
                 >
-                  Save Patient Lead
+                  {editingPatientId ? 'Save Changes' : 'Save Patient Lead'}
                 </button>
               </div>
             </form>

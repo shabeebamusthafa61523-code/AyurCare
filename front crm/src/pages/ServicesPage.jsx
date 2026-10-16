@@ -753,7 +753,7 @@ export default function ServicesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredServices.map(service => (
-                  <tr key={service._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                  <tr key={service._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900 dark:text-white text-sm">
                         {service.name}
@@ -791,7 +791,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-1.5">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
                         <button
                           onClick={() => {
                             setSelectedServiceFilter(service.name);
@@ -802,20 +802,23 @@ export default function ServicesPage() {
                         >
                           <FileText className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => openEditModal(service)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition cursor-pointer"
-                          title="Edit Service"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(service)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition cursor-pointer"
-                          title="Delete Service"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Hidden Edit & Delete on hover */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            onClick={() => openEditModal(service)}
+                            className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800/60 transition cursor-pointer"
+                            title="Edit Service"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service)}
+                            className="p-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200 dark:border-rose-800/60 transition cursor-pointer"
+                            title="Delete Service"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -1020,7 +1023,7 @@ export default function ServicesPage() {
                   <option value="All">All Services &amp; Treatments</option>
                   {services.map(s => (
                     <option key={s._id} value={s.name}>
-                      {s.name} ({s.category} - ₹{s.price})
+                      {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
                     </option>
                   ))}
                 </select>

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   UserCheck, Clock, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, 
   Stethoscope, Plus, Printer, Volume2, Tv, X, User, Phone, 
-  Building2, Sparkles, Activity, FileText, Table, LayoutGrid, Search
+  Building2, Sparkles, Activity, FileText, Table, LayoutGrid, Search,
+  Edit2, Trash2, History, Users
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -16,6 +17,7 @@ export default function ReceptionQueuePage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'kanban'
   const [selectedPatientIdForDetails, setSelectedPatientIdForDetails] = useState(null);
+  const [editingTokenId, setEditingTokenId] = useState(null);
 
   // TV Waiting Lounge Display Mode
   const [isTvMode, setIsTvMode] = useState(false);
@@ -49,6 +51,63 @@ export default function ReceptionQueuePage() {
 
   // Token Slip Print Modal
   const [activeSlip, setActiveSlip] = useState(null);
+
+  // Phone lookup dropdown and existing patient search state
+  const [showPhoneDropdown, setShowPhoneDropdown] = useState(true);
+  const [existingSearchQuery, setExistingSearchQuery] = useState('');
+
+  // Check if entered phone number matches any existing patients under ANY name
+  const phoneMatches = useMemo(() => {
+    const raw = (newPatient.phone || '').trim();
+    const digits = raw.replace(/\D/g, '');
+    if (!digits || digits.length < 4) return [];
+
+    return patients.filter(p => {
+      const pDigits = (p.phone || '').replace(/\D/g, '');
+      if (!pDigits) return false;
+      return pDigits.includes(digits) || (digits.length >= 7 && pDigits.endsWith(digits.slice(-10)));
+    });
+  }, [patients, newPatient.phone]);
+
+  // Helper to extract visit history summary for a patient
+  const getPatientSummary = (patId, patPhone) => {
+    const patAppts = appointments.filter(a => {
+      const aPatId = (a.patient?._id || a.patient || '').toString();
+      const pClean = patPhone ? patPhone.replace(/\D/g, '') : '';
+      const aClean = (a.patientPhone || '').replace(/\D/g, '');
+      return aPatId === patId.toString() || (pClean && aClean && aClean === pClean);
+    });
+
+    const activeToday = patAppts.find(a => {
+      const isToday = new Date(a.date).toDateString() === new Date().toDateString();
+      return isToday && a.status !== 'Completed' && a.status !== 'Cancelled';
+    });
+
+    const lastAppt = patAppts[0];
+
+    return {
+      totalVisits: patAppts.length,
+      lastVisitDate: lastAppt ? new Date(lastAppt.date).toLocaleDateString() : null,
+      lastDoctor: lastAppt?.doctorName,
+      lastService: lastAppt?.serviceName || lastAppt?.appointmentType,
+      activeTodayToken: activeToday?.tokenNumber || (activeToday ? activeToday._id.slice(-4) : null)
+    };
+  };
+
+  // Filtered patients for existing patient dropdown
+  const filteredExistingPatients = useMemo(() => {
+    if (!existingSearchQuery.trim()) return patients;
+    const q = existingSearchQuery.trim().toLowerCase();
+    const qDigits = q.replace(/\D/g, '');
+
+    return patients.filter(p => {
+      const nameMatch = (p.name || '').toLowerCase().includes(q);
+      const idMatch = (p.patientId || '').toLowerCase().includes(q);
+      const pDigits = (p.phone || '').replace(/\D/g, '');
+      const phoneMatch = qDigits ? (pDigits.includes(qDigits) || (qDigits.length >= 7 && pDigits.endsWith(qDigits.slice(-10)))) : false;
+      return nameMatch || idMatch || phoneMatch;
+    });
+  }, [patients, existingSearchQuery]);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -212,6 +271,27 @@ export default function ReceptionQueuePage() {
         notes: tokenForm.cabin
       };
 
+      if (editingTokenId) {
+        const res = await polyclinicService.updateAppointment(editingTokenId, apptPayload);
+        if (res.success) {
+          setShowTokenModal(false);
+          setEditingTokenId(null);
+          fetchQueue();
+          setNewPatient({ name: '', phone: '', age: '', gender: 'Male', prakriti: 'Vata-Pitta' });
+          setTokenForm(prev => ({
+            ...prev,
+            serviceId: '',
+            serviceName: '',
+            serviceCategory: '',
+            serviceDuration: '',
+            servicePrice: 0
+          }));
+        } else {
+          alert(res.message || 'Failed to update token');
+        }
+        return;
+      }
+
       const res = await polyclinicService.createAppointment(apptPayload);
       if (res.success) {
         setShowTokenModal(false);
@@ -240,6 +320,49 @@ export default function ReceptionQueuePage() {
     } catch (err) {
       alert(err.message || 'Error issuing token');
     }
+  };
+
+  const handleOpenEditToken = (token) => {
+    setEditingTokenId(token._id);
+    setPatientMode('existing');
+    setSelectedPatientId(typeof token.patient === 'object' ? token.patient?._id : token.patient);
+    setTokenForm({
+      doctorId: typeof token.doctor === 'object' ? token.doctor?._id : (token.doctor || ''),
+      doctorName: token.doctorName || '',
+      serviceId: typeof token.service === 'object' ? token.service?._id : (token.service || ''),
+      serviceName: token.serviceName || '',
+      serviceCategory: token.serviceCategory || '',
+      serviceDuration: token.serviceDuration || '',
+      servicePrice: token.servicePrice || 0,
+      department: token.department || 'Ayurvedic OP',
+      appointmentType: token.appointmentType || 'Doctor Consultation',
+      cabin: token.notes?.includes('Cabin') || token.notes?.includes('Suite') ? token.notes : 'OP Cabin 1 (Kayachikitsa)',
+      consultationFee: token.consultationFee || 500,
+      notes: token.notes || 'Walk-in OP Consultation'
+    });
+    setShowTokenModal(true);
+  };
+
+  const handleDeleteToken = (token) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Queue Token',
+      message: `Are you sure you want to delete Token #${token.tokenNumber || 1} for ${token.patientName}? This action cannot be undone.`,
+      confirmText: 'Delete Token',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await polyclinicService.deleteAppointment(token._id);
+          if (res.success) {
+            fetchQueue();
+          } else {
+            alert(res.message || 'Failed to delete token');
+          }
+        } catch (err) {
+          alert(err.message || 'Error deleting token');
+        }
+      }
+    });
   };
 
   const requestStatusUpdate = (item, status) => {
@@ -441,7 +564,10 @@ export default function ReceptionQueuePage() {
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Issue Walk-in Token Button */}
           <button
-            onClick={() => setShowTokenModal(true)}
+            onClick={() => {
+              setEditingTokenId(null);
+              setShowTokenModal(true);
+            }}
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Issue Walk-in OP Token
@@ -558,7 +684,7 @@ export default function ReceptionQueuePage() {
                   </tr>
                 ) : (
                   appointments.map((item) => (
-                    <tr key={item._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                    <tr key={item._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3.5 px-4">
                         <span className="text-sm font-black text-amber-600 dark:text-amber-400 font-mono bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
                           #{item.tokenNumber || 1}
@@ -643,6 +769,22 @@ export default function ReceptionQueuePage() {
                               <CheckCircle2 className="w-3 h-3" /> Done
                             </button>
                           )}
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditToken(item)}
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                              title="Edit Token Details"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteToken(item)}
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                              title="Delete Token"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -846,8 +988,12 @@ export default function ReceptionQueuePage() {
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Issue Walk-in OP Token</h3>
-                  <p className="text-xs text-slate-400">Assign token number &amp; place patient into waiting queue</p>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                    {editingTokenId ? 'Update OP Queue Token' : 'Issue Walk-in OP Token'}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {editingTokenId ? 'Modify token details, cabin or attending Vaidya' : 'Assign token number & place patient into waiting queue'}
+                  </p>
                 </div>
               </div>
               <button onClick={() => setShowTokenModal(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
@@ -884,29 +1030,99 @@ export default function ReceptionQueuePage() {
               </div>
 
               {patientMode === 'existing' ? (
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Select Registered Patient
-                  </label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                      Select Registered Patient
+                    </label>
+                    <span className="text-[10px] text-slate-400">Search by name, ID or phone</span>
+                  </div>
+
+                  {/* Phone / Name filter search input */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Type phone number or patient name to filter..."
+                      value={existingSearchQuery}
+                      onChange={(e) => setExistingSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                    />
+                    {existingSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setExistingSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
                   <select
                     value={selectedPatientId}
                     onChange={(e) => setSelectedPatientId(e.target.value)}
                     required
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-semibold"
                   >
-                    <option value="">-- Choose Patient --</option>
-                    {patients.map(p => (
+                    <option value="">-- Choose Patient ({filteredExistingPatients.length} found) --</option>
+                    {filteredExistingPatients.map(p => (
                       <option key={p._id} value={p._id}>
                         {p.patientId || 'PAT'} - {p.name} ({p.phone}) {p.prakriti ? `[${p.prakriti}]` : ''}
                       </option>
                     ))}
                   </select>
+
+                  {/* Selected patient preview summary */}
+                  {selectedPatientId && (() => {
+                    const selP = patients.find(p => p._id === selectedPatientId);
+                    if (!selP) return null;
+                    const summary = getPatientSummary(selP._id, selP.phone);
+                    const familyMembers = patients.filter(p => p._id !== selP._id && (p.phone || '').replace(/\D/g, '') === (selP.phone || '').replace(/\D/g, ''));
+                    return (
+                      <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-emerald-600" />
+                            {selP.name} ({selP.age || '—'} yrs, {selP.gender || '—'})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPatientIdForDetails(selP._id)}
+                            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                          >
+                            <FileText className="w-3 h-3" /> View 360 History
+                          </button>
+                        </div>
+                        <div className="text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span>Phone: <strong>{selP.phone}</strong></span>
+                          <span>Prakriti: <strong>{selP.prakriti || 'Tridoshic'}</strong></span>
+                          <span>Visits: <strong>{summary.totalVisits}</strong></span>
+                          {summary.lastVisitDate && <span>Last: <strong>{summary.lastVisitDate}</strong></span>}
+                          {summary.activeTodayToken && (
+                            <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.5 rounded">
+                              ⚡ Active Token Today: #{summary.activeTodayToken}
+                            </span>
+                          )}
+                        </div>
+                        {familyMembers.length > 0 && (
+                          <div className="pt-1 border-t border-emerald-200/50 dark:border-emerald-800/40 text-[10px] text-slate-500 flex items-center gap-1">
+                            <Users className="w-3 h-3 text-emerald-600" />
+                            <span>Other profiles sharing phone {selP.phone}:</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {familyMembers.map(m => m.name).join(', ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-3 bg-slate-50 dark:bg-slate-900/40 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Full Name</label>
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Full Name *</label>
                       <input
                         type="text"
                         placeholder="e.g. Anjali Nair"
@@ -916,16 +1132,140 @@ export default function ReceptionQueuePage() {
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs"
                       />
                     </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        placeholder="+91 98..."
-                        value={newPatient.phone}
-                        onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-                        required
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs"
-                      />
+                    <div className="relative">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                        Phone Number *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="e.g. 98470 12345"
+                          value={newPatient.phone}
+                          onChange={(e) => {
+                            setNewPatient({ ...newPatient, phone: e.target.value });
+                            setShowPhoneDropdown(true);
+                          }}
+                          onFocus={() => setShowPhoneDropdown(true)}
+                          required
+                          className={`w-full bg-white dark:bg-slate-800 border rounded-xl p-2 text-xs transition ${
+                            phoneMatches.length > 0
+                              ? 'border-amber-400 ring-1 ring-amber-400/40 dark:border-amber-500'
+                              : 'border-slate-200 dark:border-slate-700'
+                          }`}
+                        />
+                        {phoneMatches.length > 0 && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                            <Users className="w-2.5 h-2.5" /> {phoneMatches.length} match{phoneMatches.length > 1 ? 'es' : ''}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* History dropdown for this phone number under ANY name */}
+                      {showPhoneDropdown && phoneMatches.length > 0 && (
+                        <div className="absolute left-0 right-0 sm:w-[380px] sm:-left-36 top-full mt-1.5 z-50 bg-white dark:bg-[#161d2b] border border-amber-300 dark:border-amber-700 rounded-2xl shadow-2xl p-2.5 space-y-2 max-h-80 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/60 dark:border-amber-900/40">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900 dark:text-amber-200">
+                              <History className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>History for {newPatient.phone}:</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowPhoneDropdown(false)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                            Found {phoneMatches.length} registered patient profile(s) sharing this phone number under different or existing names:
+                          </p>
+
+                          <div className="space-y-2">
+                            {phoneMatches.map(match => {
+                              const summary = getPatientSummary(match._id, match.phone);
+                              return (
+                                <div
+                                  key={match._id}
+                                  className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-slate-800/80 border border-amber-200/80 dark:border-slate-700 hover:border-amber-400 transition space-y-1.5"
+                                >
+                                  <div className="flex items-start justify-between gap-1.5">
+                                    <div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                          {match.name}
+                                        </span>
+                                        <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                          {match.patientId || 'PAT'}
+                                        </span>
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                        <span>{match.gender || 'Patient'}, {match.age || '—'} yrs</span>
+                                        <span>•</span>
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{match.prakriti || 'Tridoshic'}</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedPatientIdForDetails(match._id)}
+                                        className="px-2 py-1 text-[10px] font-bold rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition flex items-center gap-0.5"
+                                        title="View Full Clinical History"
+                                      >
+                                        <FileText className="w-2.5 h-2.5 text-blue-500" /> History
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPatientMode('existing');
+                                          setSelectedPatientId(match._id);
+                                          setShowPhoneDropdown(false);
+                                        }}
+                                        className="px-2 py-1 text-[10px] font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition flex items-center gap-0.5 shadow-xs"
+                                        title="Use this existing profile for token"
+                                      >
+                                        <CheckCircle2 className="w-2.5 h-2.5" /> Select
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* History details */}
+                                  <div className="text-[10px] text-slate-600 dark:text-slate-400 bg-white/70 dark:bg-slate-900/60 p-1.5 rounded-lg border border-amber-100 dark:border-slate-700/80 space-y-0.5">
+                                    <div className="flex justify-between">
+                                      <span>Total Visits: <strong>{summary.totalVisits}</strong></span>
+                                      {summary.lastVisitDate && (
+                                        <span>Last: <strong>{summary.lastVisitDate}</strong></span>
+                                      )}
+                                    </div>
+                                    {summary.lastDoctor && (
+                                      <div className="truncate text-slate-500">
+                                        Doctor: {summary.lastDoctor} {summary.lastService ? `• ${summary.lastService}` : ''}
+                                      </div>
+                                    )}
+                                    {summary.activeTodayToken && (
+                                      <div className="text-amber-700 dark:text-amber-400 font-bold">
+                                        ⚡ Active Token Today: #{summary.activeTodayToken}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="pt-1.5 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between text-[10px]">
+                            <span className="text-slate-400">Different family member?</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowPhoneDropdown(false)}
+                              className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                            >
+                              Continue registering new patient →
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -985,7 +1325,7 @@ export default function ReceptionQueuePage() {
                   onChange={(e) => handleServiceChange(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-semibold"
                 >
-                  <option value="">-- General Vaidya Consultation (Default) --</option>
+                  <option value="">-- General Vaidya Consultation (Default: ₹500) --</option>
                   {services.map(s => (
                     <option key={s._id} value={s._id}>
                       {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
@@ -1037,9 +1377,10 @@ export default function ReceptionQueuePage() {
                     {doctors.map(d => {
                       const id = d.doctor?._id || d._id;
                       const name = d.doctor?.name || d.name;
+                      const fee = d.consultationFee || 500;
                       return (
                         <option key={id} value={id}>
-                          {name} ({d.specialization || 'Vaidya'})
+                          {name} ({d.specialization || 'Vaidya'}) — ₹{fee}
                         </option>
                       );
                     })}
@@ -1106,7 +1447,7 @@ export default function ReceptionQueuePage() {
                   type="submit"
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5"
                 >
-                  <UserCheck className="w-4 h-4" /> Issue &amp; Print Slip
+                  <UserCheck className="w-4 h-4" /> {editingTokenId ? 'Save Changes' : 'Issue & Print Slip'}
                 </button>
               </div>
             </form>

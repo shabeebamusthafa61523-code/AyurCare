@@ -33,6 +33,14 @@ export const polyclinicService = {
     const res = await axios.get(`${API_URL}/v1/polyclinic/patients/${id}`, getAuthHeaders());
     return res.data;
   },
+  updatePatient: async (id, data) => {
+    const res = await axios.put(`${API_URL}/v1/polyclinic/patients/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deletePatient: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/patients/${id}`, getAuthHeaders());
+    return res.data;
+  },
 
   // Appointments
   getAppointments: async () => {
@@ -41,6 +49,14 @@ export const polyclinicService = {
   },
   createAppointment: async (data) => {
     const res = await axios.post(`${API_URL}/v1/polyclinic/appointments`, data, getAuthHeaders());
+    return res.data;
+  },
+  updateAppointment: async (id, data) => {
+    const res = await axios.put(`${API_URL}/v1/polyclinic/appointments/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deleteAppointment: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/appointments/${id}`, getAuthHeaders());
     return res.data;
   },
   updateAppointmentStatus: async (id, status) => {
@@ -57,6 +73,14 @@ export const polyclinicService = {
     const res = await axios.post(`${API_URL}/v1/polyclinic/emr`, data, getAuthHeaders());
     return res.data;
   },
+  updateEmrRecord: async (id, data) => {
+    const res = await axios.put(`${API_URL}/v1/polyclinic/emr/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deleteEmrRecord: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/emr/${id}`, getAuthHeaders());
+    return res.data;
+  },
 
   // Prescriptions
   getPrescriptions: async () => {
@@ -65,6 +89,14 @@ export const polyclinicService = {
   },
   createPrescription: async (data) => {
     const res = await axios.post(`${API_URL}/v1/polyclinic/prescriptions`, data, getAuthHeaders());
+    return res.data;
+  },
+  updatePrescription: async (id, data) => {
+    const res = await axios.put(`${API_URL}/v1/polyclinic/prescriptions/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deletePrescription: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/prescriptions/${id}`, getAuthHeaders());
     return res.data;
   },
 
@@ -81,6 +113,10 @@ export const polyclinicService = {
     const res = await axios.put(`${API_URL}/v1/polyclinic/lab-tests/${id}`, data, getAuthHeaders());
     return res.data;
   },
+  deleteLabTest: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/lab-tests/${id}`, getAuthHeaders());
+    return res.data;
+  },
 
   // Pharmacy & Inventory
   getPharmacyItems: async () => {
@@ -95,6 +131,10 @@ export const polyclinicService = {
     const res = await axios.put(`${API_URL}/v1/polyclinic/pharmacy/${id}`, data, getAuthHeaders());
     return res.data;
   },
+  deletePharmacyItem: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/pharmacy/${id}`, getAuthHeaders());
+    return res.data;
+  },
 
   // Invoices & Billing
   getInvoices: async () => {
@@ -103,6 +143,10 @@ export const polyclinicService = {
   },
   createInvoice: async (data) => {
     const res = await axios.post(`${API_URL}/v1/polyclinic/invoices`, data, getAuthHeaders());
+    return res.data;
+  },
+  deleteInvoice: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/invoices/${id}`, getAuthHeaders());
     return res.data;
   },
 
@@ -117,6 +161,10 @@ export const polyclinicService = {
   },
   updateDoctorSchedule: async (id, data) => {
     const res = await axios.put(`${API_URL}/v1/polyclinic/doctors/${id}`, data, getAuthHeaders());
+    return res.data;
+  },
+  deleteDoctorSchedule: async (id) => {
+    const res = await axios.delete(`${API_URL}/v1/polyclinic/doctors/${id}`, getAuthHeaders());
     return res.data;
   },
 

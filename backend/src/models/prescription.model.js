@@ -26,16 +26,30 @@ const prescriptionSchema = new mongoose.Schema({
     name: { type: String, required: true },
     form: {
       type: String,
-      default: 'Kashayam'
+      default: 'Medicine'
     },
-    dosage: { type: String, default: '15 ml with 45 ml lukewarm water' },
+    dosage: { type: String, default: '1 Tab' },
     frequency: { type: String, default: 'Twice daily' },
-    anupana: { type: String, default: 'Lukewarm water' }, // Carrier/Vehicle (Honey, Milk, Ghee, Ginger water)
+    anupana: { type: String, default: 'Warm water' },
     timing: {
       type: String,
-      default: 'Adhobhakta (After Food)'
+      default: 'After Food'
     },
-    duration: { type: String, default: '15 Days' },
+    duration: { type: String, default: '7 Days' },
+    instructions: { type: String, default: '' }
+  }],
+  therapies: [{
+    name: { type: String, required: true },
+    sessions: { type: String, default: '7 Sessions' },
+    frequency: { type: String, default: 'Daily (Morning)' },
+    duration: { type: String, default: '45 mins' },
+    instructions: { type: String, default: '' }
+  }],
+  services: [{
+    name: { type: String, required: true },
+    sessions: { type: String, default: '1 Session' },
+    frequency: { type: String, default: 'Weekly Review' },
+    duration: { type: String, default: '30 mins' },
     instructions: { type: String, default: '' }
   }],
   pathyaApathyaNotes: {

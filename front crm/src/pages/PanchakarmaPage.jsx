@@ -19,30 +19,32 @@ import {
   BedDouble,
   HeartPulse,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 const THERAPY_OPTIONS = [
-  'Abhyanga & Swedana (Herbal Oil Massage & Steam)',
-  'Shirodhara (Continuous Medicated Oil Pouring)',
-  'Elakizhi (Herbal Leaf Bolus Bag)',
-  'Podikizhi (Herbal Powder Bolus Bag)',
-  'Njavarakizhi (Shashtika Shali Pinda Sweda)',
-  'Kati Basti (Medicated Oil Retention on Lower Back)',
-  'Janu Basti (Medicated Oil Retention on Knee)',
-  'Greeva Basti (Medicated Oil Retention on Neck)',
-  'Pizhichil (Medicated Oil Bath / Royal Treatment)',
-  'Nasya Karma (Nasal Errhine Therapy)',
-  'Virechana Karma (Therapeutic Purgation)',
-  'Vamana Karma (Therapeutic Emesis)',
-  'Matra Basti / Sneha Basti (Medicated Oil Enema)',
-  'Kashaya Basti / Niruha Basti (Herbal Decoction Enema)',
-  'Udvartana (Herbal Powder Exfoliation / Weight Management)',
-  'Takradhara (Medicated Buttermilk Pouring)',
-  'Lepam & Mukhalepam (Ayurvedic Herbal Paste Application)',
-  'Netra Tarpana (Medicated Ghee Eye Bath)'
+  { name: 'Abhyanga & Swedana (Herbal Oil Massage & Steam)', fee: 1200, duration: '60 mins' },
+  { name: 'Shirodhara (Continuous Medicated Oil Pouring)', fee: 1500, duration: '45 mins' },
+  { name: 'Elakizhi (Herbal Leaf Bolus Bag)', fee: 1200, duration: '45 mins' },
+  { name: 'Podikizhi (Herbal Powder Bolus Bag)', fee: 1100, duration: '45 mins' },
+  { name: 'Njavarakizhi (Shashtika Shali Pinda Sweda)', fee: 1800, duration: '60 mins' },
+  { name: 'Kati Basti (Medicated Oil Retention on Lower Back)', fee: 850, duration: '30 mins' },
+  { name: 'Janu Basti (Medicated Oil Retention on Knee)', fee: 850, duration: '30 mins' },
+  { name: 'Greeva Basti (Medicated Oil Retention on Neck)', fee: 850, duration: '30 mins' },
+  { name: 'Pizhichil (Medicated Oil Bath / Royal Treatment)', fee: 2500, duration: '60 mins' },
+  { name: 'Nasya Karma (Nasal Errhine Therapy)', fee: 750, duration: '30 mins' },
+  { name: 'Virechana Karma (Therapeutic Purgation)', fee: 3000, duration: 'Procedure Protocol' },
+  { name: 'Vamana Karma (Therapeutic Emesis)', fee: 3500, duration: 'Procedure Protocol' },
+  { name: 'Matra Basti / Sneha Basti (Medicated Oil Enema)', fee: 800, duration: '30 mins' },
+  { name: 'Kashaya Basti / Niruha Basti (Herbal Decoction Enema)', fee: 1200, duration: '45 mins' },
+  { name: 'Udvartana (Herbal Powder Exfoliation / Weight Management)', fee: 1300, duration: '45 mins' },
+  { name: 'Takradhara (Medicated Buttermilk Pouring)', fee: 1400, duration: '45 mins' },
+  { name: 'Lepam & Mukhalepam (Ayurvedic Herbal Paste Application)', fee: 650, duration: '30 mins' },
+  { name: 'Netra Tarpana (Medicated Ghee Eye Bath)', fee: 900, duration: '30 mins' }
 ];
 
 export default function PanchakarmaPage() {
@@ -55,8 +57,9 @@ export default function PanchakarmaPage() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [viewMode, setViewMode] = useState('table');
 
-  // New Booking Modal
+  // New / Edit Booking Modal
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [editingBookingId, setEditingBookingId] = useState(null);
   const [formData, setFormData] = useState({
     patient: '',
     patientName: '',
@@ -144,22 +147,73 @@ export default function PanchakarmaPage() {
     }
 
     try {
-      const res = await polyclinicService.createPanchakarmaBooking(formData);
+      let res;
+      if (editingBookingId) {
+        res = await polyclinicService.updatePanchakarmaBooking(editingBookingId, formData);
+      } else {
+        res = await polyclinicService.createPanchakarmaBooking(formData);
+      }
+
       if (res.success) {
         setShowBookingModal(false);
+        const wasEditing = Boolean(editingBookingId);
+        setEditingBookingId(null);
         fetchData();
         setConfirmModal({
           isOpen: true,
-          title: 'Panchakarma Package Booked',
-          message: `Therapy package "${formData.therapyName}" (${formData.totalSessions} sessions) created for ${formData.patientName}.`,
+          title: wasEditing ? 'Therapy Package Updated' : 'Panchakarma Package Booked',
+          message: wasEditing
+            ? `Therapy package "${formData.therapyName}" updated successfully.`
+            : `Therapy package "${formData.therapyName}" (${formData.totalSessions} sessions) created for ${formData.patientName}.`,
           confirmText: 'Done',
           variant: 'success',
           onConfirm: () => {}
         });
       }
     } catch (err) {
-      alert(err.message);
+      alert(err.response?.data?.message || err.message);
     }
+  };
+
+  const handleOpenEditBooking = (b) => {
+    setEditingBookingId(b._id);
+    setFormData({
+      patient: b.patient?._id || b.patient || '',
+      patientName: b.patientName || '',
+      patientPhone: b.patientPhone || '',
+      doctorName: b.doctorName || 'Dr. Arya Warrier (BAMS, MD)',
+      therapistName: b.therapistName || 'Rahul K. (Male Therapist)',
+      therapistGender: b.therapistGender || 'Male',
+      therapyName: b.therapyName || 'Janu Basti (Medicated Oil Retention on Knee)',
+      serviceId: b.serviceId || '',
+      roomOrDroni: b.roomOrDroni || 'Panchakarma Suite 1 (Droni A)',
+      totalSessions: b.totalSessions || 7,
+      timeSlot: b.timeSlot || '08:00 AM - 09:15 AM',
+      packageCost: b.packageCost || 7500,
+      medicatedOilOrKashayam: b.medicatedOilOrKashayam || 'Mahanarayana Thailam & Ksheerabala 101',
+      purvaKarmaNotes: b.purvaKarmaNotes || '',
+      pradhanaKarmaNotes: b.pradhanaKarmaNotes || '',
+      paschatKarmaNotes: b.paschatKarmaNotes || ''
+    });
+    setShowBookingModal(true);
+  };
+
+  const handleDeleteBooking = (b) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Panchakarma Booking',
+      message: `Are you sure you want to cancel and delete therapy package "${b.therapyName}" for ${b.patientName}? This action cannot be undone.`,
+      confirmText: 'Delete Permanently',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await polyclinicService.deletePanchakarmaBooking(b._id);
+          fetchData();
+        } catch (err) {
+          alert(err.response?.data?.message || err.message || 'Failed to delete booking');
+        }
+      }
+    });
   };
 
   const handleOpenLogSession = (booking) => {
@@ -362,7 +416,7 @@ export default function PanchakarmaPage() {
                 {filteredBookings.map((b) => {
                   const progressPercent = Math.min(100, Math.round(((b.completedSessions || 0) / (b.totalSessions || 1)) * 100));
                   return (
-                    <tr key={b._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                    <tr key={b._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                           {b.bookingNo || 'PK-' + b._id?.slice(-4).toUpperCase()}
@@ -444,6 +498,24 @@ export default function PanchakarmaPage() {
                               <CheckCircle2 className="w-3 h-3" /> Log Session
                             </button>
                           )}
+
+                          {/* Hidden Edit & Delete on hover */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditBooking(b)}
+                              className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800/60 transition"
+                              title="Edit Therapy Package"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBooking(b)}
+                              className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200 dark:border-rose-800/60 transition"
+                              title="Delete Therapy Booking"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -559,9 +631,9 @@ export default function PanchakarmaPage() {
           <div className="bg-white dark:bg-[#111622] rounded-3xl p-6 max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-500" /> Book Ayurvedic Therapy Package
+                <Sparkles className="w-5 h-5 text-emerald-500" /> {editingBookingId ? 'Edit Ayurvedic Therapy Package' : 'Book Ayurvedic Therapy Package'}
               </h2>
-              <button onClick={() => setShowBookingModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => { setShowBookingModal(false); setEditingBookingId(null); }} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -605,17 +677,20 @@ export default function PanchakarmaPage() {
                         pradhanaKarmaNotes: matchedService.description || prev.pradhanaKarmaNotes
                       }));
                     } else {
+                      const matchedTrad = THERAPY_OPTIONS.find(t => t.name === val);
                       setFormData(prev => ({
                         ...prev,
                         therapyName: val,
-                        serviceId: ''
+                        serviceId: '',
+                        packageCost: (matchedTrad?.fee || 1200) * (prev.totalSessions || 1),
+                        duration: matchedTrad?.duration || prev.duration
                       }));
                     }
                   }}
                   className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
                 >
                   {services.length > 0 && (
-                    <optgroup label="✨ Clinic Catalog Services (Official Pricing &amp; Duration)">
+                    <optgroup label="✨ Clinic Catalog Services (Official Pricing & Duration)">
                       {services.map(s => (
                         <option key={s._id} value={s.name}>
                           {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
@@ -625,7 +700,9 @@ export default function PanchakarmaPage() {
                   )}
                   <optgroup label="🌿 Traditional Classical Panchakarma Procedures">
                     {THERAPY_OPTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name} — ₹{opt.fee} ({opt.duration})
+                      </option>
                     ))}
                   </optgroup>
                 </select>
@@ -750,7 +827,7 @@ export default function PanchakarmaPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
                 >
-                  Confirm Booking
+                  {editingBookingId ? 'Update Therapy Booking' : 'Confirm Booking'}
                 </button>
               </div>
             </form>

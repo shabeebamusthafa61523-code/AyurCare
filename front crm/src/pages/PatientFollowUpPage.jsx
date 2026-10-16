@@ -360,7 +360,7 @@ export default function PatientFollowUpPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredFollowUps.map((item) => (
-                  <tr key={item._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                  <tr key={item._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
                         <Clock className="w-3.5 h-3.5 text-emerald-500" />
@@ -406,13 +406,6 @@ export default function PatientFollowUpPage() {
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => openEditModal(item)}
-                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
-                          title="Edit Follow-up"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
                         {item.status === 'Pending' && (
                           <button
                             onClick={() => requestStatusChange(item, 'Completed')}
@@ -422,13 +415,22 @@ export default function PatientFollowUpPage() {
                             <CheckCircle2 className="w-3 h-3" /> Complete
                           </button>
                         )}
-                        <button
-                          onClick={() => requestDelete(item)}
-                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950 text-rose-500 transition"
-                          title="Delete Follow-up"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+                            title="Edit Follow-up"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => requestDelete(item)}
+                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950 text-rose-500 transition"
+                            title="Delete Follow-up"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
                       </div>
                     </td>
                   </tr>

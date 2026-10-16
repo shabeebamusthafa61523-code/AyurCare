@@ -11,7 +11,8 @@ import {
   Printer, 
   AlertCircle,
   X,
-  Activity
+  Activity,
+  Trash2
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -157,6 +158,28 @@ export default function LaboratoryPage() {
     }
   };
 
+  const handleDeleteTest = (test) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Lab Test Order',
+      message: `Are you sure you want to delete test order ${test.labTestNo || ''} (${test.testName}) for ${test.patientName}? This action cannot be undone.`,
+      confirmText: 'Delete Test Order',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await polyclinicService.deleteLabTest(test._id);
+          if (res.success) {
+            fetchData();
+          } else {
+            alert(res.message || 'Failed to delete lab test');
+          }
+        } catch (err) {
+          alert(err.message || 'Error deleting lab test');
+        }
+      }
+    });
+  };
+
   const filteredTests = labTests.filter(t => {
     const matchesSearch = 
       t.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,7 +268,7 @@ export default function LaboratoryPage() {
                 </tr>
               ) : (
                 filteredTests.map((test) => (
-                  <tr key={test._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
+                  <tr key={test._id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
                     <td className="py-3.5 px-4 font-bold text-cyan-600 dark:text-cyan-400">{test.labTestNo}</td>
                     <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">{test.patientName}</td>
                     <td className="py-3.5 px-4">
@@ -279,13 +302,31 @@ export default function LaboratoryPage() {
                         <span className="text-slate-400 text-[11px] italic">Pending results entry...</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => openResultModal(test)}
-                        className="inline-flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/40 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl text-xs transition border border-cyan-200/80 dark:border-cyan-800/50"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" /> Enter Results
-                      </button>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <button
+                          onClick={() => openResultModal(test)}
+                          className="inline-flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/40 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl text-xs transition border border-cyan-200/80 dark:border-cyan-800/50"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Enter Results
+                        </button>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            onClick={() => openResultModal(test)}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Edit Test Details"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTest(test)}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Delete Lab Test"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -522,11 +522,11 @@ export const seedPolyclinicData = async () => {
       console.log('🌿 Seeding authentic Ayurvedic clinic services...');
       await ClinicService.insertMany([
         {
-          name: 'General Vaidya Consultation',
+          name: 'Doctor Consultation',
           category: 'Consultation',
           price: 500,
           duration: '30 mins',
-          description: 'Comprehensive Ashtavidha Pariksha, Nadi Pariksha (pulse analysis), and personalized Ayurvedic diet & lifestyle advice.',
+          description: 'Comprehensive Ashtavidha Pariksha, Nadi Pariksha (pulse analysis), and personalized Ayurvedic clinical consultation.',
           status: 'Active'
         },
         {
@@ -720,6 +720,26 @@ export const getPatientById = async (req, res) => {
   }
 };
 
+export const updatePatient = async (req, res) => {
+  try {
+    const updated = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: 'Patient not found' });
+    res.json({ success: true, patient: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deletePatient = async (req, res) => {
+  try {
+    const deleted = await Patient.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Patient not found' });
+    res.json({ success: true, message: 'Patient deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 3. Appointments & Queue Management
 export const getAppointments = async (req, res) => {
   try {
@@ -841,8 +861,13 @@ export const createInvoiceForCompletedAppointment = async (appointmentId) => {
     if (!appt) return null;
 
     // Check if an invoice already exists for this appointment
-    const existing = await Billing.findOne({ appointment: appt._id });
-    if (existing) return existing;
+    const alreadyBilled = await Billing.findOne({
+      $or: [
+        { appointment: appt._id },
+        { appointments: appt._id }
+      ]
+    });
+    if (alreadyBilled) return alreadyBilled;
 
     let patientId = appt.patient?._id || appt.patient;
     let patientName = appt.patientName || appt.patient?.name || 'Patient';
@@ -866,9 +891,6 @@ export const createInvoiceForCompletedAppointment = async (appointmentId) => {
 
     if (!patientId) return null;
 
-    const count = await Billing.countDocuments();
-    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
-
     const serviceName = appt.serviceName || appt.appointmentType || 'Vaidya Consultation';
     let mappedCategory = 'Consultation';
     const catLower = (appt.serviceCategory || '').toLowerCase();
@@ -882,6 +904,51 @@ export const createInvoiceForCompletedAppointment = async (appointmentId) => {
     const desc = appt.serviceName
       ? `Ayurvedic Service: ${appt.serviceName}${appt.serviceDuration ? ` (${appt.serviceDuration})` : ''} - Vaidya: ${appt.doctorName || 'Doctor'}`
       : `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`;
+
+    const apptDate = appt.date ? new Date(appt.date) : new Date();
+    const startOfDay = new Date(apptDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(apptDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Check if single daily invoice already exists for this patient on this date
+    let existingDailyInvoice = await Billing.findOne({
+      patient: patientId,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (existingDailyInvoice) {
+      // Append appointment service to existing daily invoice
+      const alreadyHasDesc = (existingDailyInvoice.items || []).some(i => i.description === desc);
+      if (!alreadyHasDesc) {
+        existingDailyInvoice.items.push({
+          description: desc,
+          category: mappedCategory,
+          qty: 1,
+          unitPrice: price,
+          amount: price
+        });
+      }
+
+      if (!existingDailyInvoice.appointments) existingDailyInvoice.appointments = [];
+      if (existingDailyInvoice.appointment && !existingDailyInvoice.appointments.some(a => a.toString() === existingDailyInvoice.appointment.toString())) {
+        existingDailyInvoice.appointments.push(existingDailyInvoice.appointment);
+      }
+      if (!existingDailyInvoice.appointments.some(a => a.toString() === appt._id.toString())) {
+        existingDailyInvoice.appointments.push(appt._id);
+      }
+
+      existingDailyInvoice.totalAmount = (existingDailyInvoice.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      existingDailyInvoice.netAmount = Math.max(0, existingDailyInvoice.totalAmount - (existingDailyInvoice.discount || 0) + (existingDailyInvoice.tax || 0));
+      existingDailyInvoice.pendingAmount = Math.max(0, existingDailyInvoice.netAmount - (existingDailyInvoice.paidAmount || 0));
+      existingDailyInvoice.status = existingDailyInvoice.pendingAmount <= 0 ? 'Paid' : (existingDailyInvoice.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+      await existingDailyInvoice.save();
+      return existingDailyInvoice;
+    }
+
+    const count = await Billing.countDocuments();
+    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
 
     const items = [{
       description: desc,
@@ -902,6 +969,7 @@ export const createInvoiceForCompletedAppointment = async (appointmentId) => {
       patient: patientId,
       patientName,
       appointment: appt._id,
+      appointments: [appt._id],
       items,
       totalAmount,
       discount: 0,
@@ -911,7 +979,7 @@ export const createInvoiceForCompletedAppointment = async (appointmentId) => {
       pendingAmount,
       status,
       paymentMode: 'Cash',
-      date: new Date()
+      date: apptDate
     });
 
     return invoice;
@@ -939,6 +1007,26 @@ export const updateAppointmentStatus = async (req, res) => {
     res.json({ success: true, appointment, data: appointment });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updateAppointment = async (req, res) => {
+  try {
+    const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: 'Appointment not found' });
+    res.json({ success: true, appointment: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteAppointment = async (req, res) => {
+  try {
+    const deleted = await Appointment.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Appointment not found' });
+    res.json({ success: true, message: 'Appointment deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1016,6 +1104,63 @@ export const createEmrRecord = async (req, res) => {
   }
 };
 
+export const updateEmrRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await EMR.findById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'EMR consultation record not found.' });
+    }
+
+    const patientId = req.body.patient || req.body.patientId || existing.patient;
+    let doctorId = req.body.doctor || req.body.doctorId || existing.doctor || req.user?._id;
+    let doctorName = req.body.doctorName || existing.doctorName;
+
+    const updateData = {
+      ...req.body,
+      patient: patientId,
+      ...(doctorId ? { doctor: doctorId } : {}),
+      doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)'
+    };
+
+    const updatedEmr = await EMR.findByIdAndUpdate(id, updateData, { new: true }).populate('patient');
+
+    // If follow-up date changed or provided, update or create follow-up
+    if (req.body.followUpDate) {
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        await FollowUp.findOneAndUpdate(
+          { appointment: req.body.appointment || existing.appointment, patient: patientId },
+          {
+            patient: patient._id,
+            patientName: patient.name,
+            patientPhone: patient.phone,
+            doctor: doctorId,
+            doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)',
+            followUpDate: req.body.followUpDate,
+            purpose: 'Updated Consultation Follow-up'
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
+    res.json({ success: true, emr: updatedEmr, data: updatedEmr });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteEmrRecord = async (req, res) => {
+  try {
+    const deleted = await EMR.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'EMR record not found' });
+    res.json({ success: true, message: 'EMR consultation record deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 5. Prescriptions
 export const getPrescriptions = async (req, res) => {
   try {
@@ -1053,17 +1198,62 @@ export const createPrescription = async (req, res) => {
 
     const count = await Prescription.countDocuments();
     const prescriptionNo = `RX-${Date.now().toString().slice(-4)}${count + 1}`;
+
+    const medicines = req.body.medicines || [];
+    const therapies = req.body.therapies || [];
+    const services = req.body.services || [];
+
     const prescription = await Prescription.create({
       ...req.body,
       patient: patientId,
       patientName,
       ...(doctorId ? { doctor: doctorId } : {}),
       doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)',
-      prescriptionNo
+      prescriptionNo,
+      medicines,
+      therapies,
+      services
     });
     res.status(201).json({ success: true, prescription, data: prescription });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updatePrescription = async (req, res) => {
+  try {
+    const patientId = req.body.patient || req.body.patientId;
+    let patientName = req.body.patientName;
+    if (patientId && !patientName) {
+      const p = await Patient.findById(patientId);
+      if (p) patientName = p.name;
+    }
+
+    const updated = await Prescription.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.body,
+        ...(patientName ? { patientName } : {}),
+        medicines: req.body.medicines || [],
+        therapies: req.body.therapies || [],
+        services: req.body.services || []
+      },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: 'Prescription not found' });
+    res.json({ success: true, prescription: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deletePrescription = async (req, res) => {
+  try {
+    const deleted = await Prescription.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Prescription not found' });
+    res.json({ success: true, message: 'Prescription deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1094,6 +1284,16 @@ export const updateLabTest = async (req, res) => {
     res.json({ success: true, labTest });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteLabTest = async (req, res) => {
+  try {
+    const deleted = await Laboratory.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Lab test not found' });
+    res.json({ success: true, message: 'Lab test deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1137,16 +1337,76 @@ export const updatePharmacyItem = async (req, res) => {
   }
 };
 
+export const deletePharmacyItem = async (req, res) => {
+  try {
+    const deleted = await PharmacyInventory.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Pharmacy item not found' });
+    res.json({ success: true, message: 'Pharmacy item deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 8. Billing & Invoicing
 export const getInvoices = async (req, res) => {
   try {
-    // Auto-generate invoices for any completed appointments that don't have an invoice yet
+    // 1. Auto-generate or append invoices for completed appointments
     const completedAppts = await Appointment.find({ status: 'Completed' });
     for (const appt of completedAppts) {
       await createInvoiceForCompletedAppointment(appt._id);
     }
 
-    const invoices = await Billing.find().populate('patient').sort({ createdAt: -1 });
+    // 2. Consolidate any duplicate invoices for the same patient on the same calendar date into a single invoice!
+    const allInvoices = await Billing.find().populate('patient').sort({ date: 1, createdAt: 1 });
+    const seenByPatientAndDate = new Map();
+
+    for (const inv of allInvoices) {
+      const patId = (inv.patient?._id || inv.patient || '').toString();
+      if (!patId) continue;
+      const invDate = new Date(inv.date || inv.createdAt);
+      const dateKey = `${patId}_${invDate.getFullYear()}-${String(invDate.getMonth() + 1).padStart(2, '0')}-${String(invDate.getDate()).padStart(2, '0')}`;
+
+      if (!seenByPatientAndDate.has(dateKey)) {
+        seenByPatientAndDate.set(dateKey, inv);
+      } else {
+        // Merge into the primary invoice
+        const primary = seenByPatientAndDate.get(dateKey);
+
+        (inv.items || []).forEach(newItem => {
+          const exists = primary.items.some(pi => pi.description === newItem.description && pi.amount === newItem.amount);
+          if (!exists) {
+            primary.items.push(newItem);
+          }
+        });
+
+        if (!primary.appointments) primary.appointments = [];
+        if (primary.appointment && !primary.appointments.some(a => a.toString() === primary.appointment.toString())) {
+          primary.appointments.push(primary.appointment);
+        }
+        if (inv.appointment && !primary.appointments.some(a => a.toString() === inv.appointment.toString())) {
+          primary.appointments.push(inv.appointment);
+        }
+        if (inv.appointments) {
+          inv.appointments.forEach(a => {
+            if (!primary.appointments.some(pa => pa.toString() === a.toString())) {
+              primary.appointments.push(a);
+            }
+          });
+        }
+
+        primary.paidAmount = (primary.paidAmount || 0) + (inv.paidAmount || 0);
+        primary.discount = (primary.discount || 0) + (inv.discount || 0);
+        primary.totalAmount = primary.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        primary.netAmount = Math.max(0, primary.totalAmount - primary.discount + (primary.tax || 0));
+        primary.pendingAmount = Math.max(0, primary.netAmount - primary.paidAmount);
+        primary.status = primary.pendingAmount <= 0 ? 'Paid' : (primary.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+        await primary.save();
+        await Billing.findByIdAndDelete(inv._id);
+      }
+    }
+
+    const invoices = await Billing.find().populate('patient').sort({ date: -1, createdAt: -1 });
     res.json({ success: true, invoices, data: invoices });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1166,9 +1426,12 @@ export const createInvoice = async (req, res) => {
       if (p) patientName = p.name;
     }
 
-    const count = await Billing.countDocuments();
-    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
-    
+    const targetDate = req.body.date ? new Date(req.body.date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     let totalAmount = 0;
     const items = (req.body.items || []).map(item => {
       const amount = (item.qty || 1) * (item.unitPrice || 0);
@@ -1178,10 +1441,40 @@ export const createInvoice = async (req, res) => {
 
     const discount = req.body.discount || 0;
     const tax = req.body.tax || 0;
-    const netAmount = totalAmount - discount + tax;
+    const netAmount = Math.max(0, totalAmount - discount + tax);
     const paidAmount = req.body.paidAmount !== undefined ? req.body.paidAmount : netAmount;
     const pendingAmount = Math.max(0, netAmount - paidAmount);
     const status = pendingAmount <= 0 ? 'Paid' : (paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+    // Check if a single daily invoice already exists for this patient on this date
+    let existingDailyInvoice = await Billing.findOne({
+      patient: patientId,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (existingDailyInvoice) {
+      existingDailyInvoice.items = items;
+      existingDailyInvoice.totalAmount = totalAmount;
+      existingDailyInvoice.discount = discount;
+      existingDailyInvoice.tax = tax;
+      existingDailyInvoice.netAmount = netAmount;
+      existingDailyInvoice.paidAmount = paidAmount;
+      existingDailyInvoice.pendingAmount = pendingAmount;
+      existingDailyInvoice.status = status;
+      if (req.body.paymentMode) existingDailyInvoice.paymentMode = req.body.paymentMode;
+      if (patientName) existingDailyInvoice.patientName = patientName;
+      await existingDailyInvoice.save();
+
+      return res.status(200).json({ 
+        success: true, 
+        invoice: existingDailyInvoice, 
+        data: existingDailyInvoice, 
+        message: 'Updated single daily invoice for this patient' 
+      });
+    }
+
+    const count = await Billing.countDocuments();
+    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
 
     const invoice = await Billing.create({
       ...req.body,
@@ -1190,15 +1483,28 @@ export const createInvoice = async (req, res) => {
       invoiceNo,
       items,
       totalAmount,
+      discount,
+      tax,
       netAmount,
       paidAmount,
       pendingAmount,
-      status
+      status,
+      date: targetDate
     });
 
     res.status(201).json({ success: true, invoice, data: invoice });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteInvoice = async (req, res) => {
+  try {
+    const deleted = await Billing.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Invoice not found' });
+    res.json({ success: true, message: 'Invoice deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1227,6 +1533,16 @@ export const updateDoctorSchedule = async (req, res) => {
     res.json({ success: true, doctor: doc, data: doc });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteDoctorSchedule = async (req, res) => {
+  try {
+    const deleted = await DoctorSchedule.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Doctor schedule not found' });
+    res.json({ success: true, message: 'Doctor schedule deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

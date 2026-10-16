@@ -18,7 +18,10 @@ import {
   ShieldAlert,
   Table,
   Search,
-  PenTool
+  PenTool,
+  Edit2,
+  Trash2,
+  X
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -31,6 +34,7 @@ export default function DoctorEMRPage() {
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('ayurvedic'); // 'ayurvedic' | 'vitals' | 'pathya'
+  const [editingEmrId, setEditingEmrId] = useState(null);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -141,6 +145,48 @@ export default function DoctorEMRPage() {
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditingEmrId(null);
+    setFormData({
+      patient: '',
+      patientName: '',
+      appointment: '',
+      doctorName: 'Dr. Arya Warrier (BAMS, MD)',
+      symptoms: '',
+      vitals: { bp: '120/80', pulse: '74', temp: '98.4 F', weight: '70 kg', spo2: '99%' },
+      allergies: '',
+      medicalHistory: '',
+      diagnosis: '',
+      rogaNidana: 'Sandhivata (Osteoarthritis)',
+      dushyaDhatu: 'Asthi & Majja Dhatu, Vata Prakopa',
+      prakriti: 'Vata-Pitta',
+      vikriti: 'Vata Aggravation with Mild Pitta',
+      agni: 'Sama (Balanced)',
+      koshtha: 'Madhyama (Regular)',
+      amaStatus: 'Niraama (Toxin Free)',
+      ashtavidhaPariksha: {
+        nadi: 'Sarpa Gati / Vata Pradhana (Quick, irregular)',
+        mutra: 'Prakrita (Clear straw yellow)',
+        mala: 'Prakrita (Regular, formed)',
+        jihva: 'Niraama (Clean, pink)',
+        shabda: 'Prakrita (Clear & steady)',
+        sparsha: 'Samashitoshna (Normal temp)',
+        drik: 'Prakrita (Clear)',
+        akriti: 'Madhyama (Moderate)'
+      },
+      chikitsaType: 'Combined (Shamana + Shodhana)',
+      treatmentPlan: '',
+      pathyaApathya: {
+        pathyaAhara: 'Warm cooked barley, boiled vegetables, ginger tea, cow ghee.',
+        apathyaAhara: 'Cold refrigerated items, dry snacks, curd at night, deep-fried food.',
+        pathyaVihara: 'Morning gentle walking, 10 min Nadi Shodhana Pranayama.',
+        apathyaVihara: 'Day sleep, night vigil, exposure to strong cold air.'
+      },
+      consultationNotes: '',
+      followUpDate: ''
+    });
+  };
+
   const requestSubmit = (e) => {
     e.preventDefault();
     if (!formData.patient) {
@@ -148,25 +194,25 @@ export default function DoctorEMRPage() {
       return;
     }
 
+    const isEditing = Boolean(editingEmrId);
+
     setConfirmModal({
       isOpen: true,
-      title: `Save Ayurvedic Consultation EMR`,
-      message: `Save Rogi Pariksha & clinical consultation record for ${formData.patientName} (${formData.rogaNidana})?`,
-      confirmText: `Save EMR Record`,
+      title: isEditing ? `Update Doctor Consultation EMR` : `Save Ayurvedic Consultation EMR`,
+      message: isEditing
+        ? `Update Rogi Pariksha & clinical consultation record for ${formData.patientName || 'Patient'} (${formData.rogaNidana || 'EMR'})?`
+        : `Save Rogi Pariksha & clinical consultation record for ${formData.patientName} (${formData.rogaNidana})?`,
+      confirmText: isEditing ? `Update Consultation` : `Save EMR Record`,
       variant: 'success',
       onConfirm: async () => {
         try {
-          const res = await polyclinicService.createEmrRecord(formData);
+          const res = isEditing
+            ? await polyclinicService.updateEmrRecord(editingEmrId, formData)
+            : await polyclinicService.createEmrRecord(formData);
           if (res.success) {
-            setFormData(prev => ({
-              ...prev,
-              patient: '',
-              patientName: '',
-              symptoms: '',
-              diagnosis: '',
-              treatmentPlan: ''
-            }));
+            handleCancelEdit();
             fetchData();
+            setViewMode('table');
           }
         } catch (err) {
           alert(err.response?.data?.message || err.message);
@@ -176,6 +222,7 @@ export default function DoctorEMRPage() {
   };
 
   const handleLoadEmrIntoForm = (item) => {
+    setEditingEmrId(item._id);
     setFormData({
       patient: item.patient?._id || item.patient || '',
       patientName: item.patient?.name || item.patientName || '',
@@ -201,6 +248,24 @@ export default function DoctorEMRPage() {
       followUpDate: item.followUpDate ? item.followUpDate.split('T')[0] : ''
     });
     setViewMode('form');
+  };
+
+  const handleDeleteEmr = (item) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete EMR Consultation Record',
+      message: `Are you sure you want to delete the consultation record for ${item.patient?.name || item.patientName || 'patient'}? This action cannot be undone.`,
+      confirmText: 'Delete Permanently',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await polyclinicService.deleteEmrRecord(item._id);
+          fetchData();
+        } catch (err) {
+          alert(err.response?.data?.message || err.message || 'Failed to delete record');
+        }
+      }
+    });
   };
 
   const filteredEmrs = emrs.filter(e => {
@@ -229,7 +294,14 @@ export default function DoctorEMRPage() {
         </div>
 
         <button
-          onClick={() => setViewMode(viewMode === 'table' ? 'form' : 'table')}
+          onClick={() => {
+            if (viewMode === 'table') {
+              handleCancelEdit();
+              setViewMode('form');
+            } else {
+              setViewMode('table');
+            }
+          }}
           className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto"
         >
           {viewMode === 'table' ? (
@@ -307,7 +379,7 @@ export default function DoctorEMRPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                   {filteredEmrs.map((item) => (
-                    <tr key={item._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                    <tr key={item._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3 px-4 whitespace-nowrap text-slate-500">
                         <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
                           <Calendar className="w-3.5 h-3.5 text-emerald-500" />
@@ -356,13 +428,33 @@ export default function DoctorEMRPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => handleLoadEmrIntoForm(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800/60 shadow-sm transition"
-                          title="Open in EMR Consultation Editor"
-                        >
-                          <FileText className="w-3.5 h-3.5" /> View / Edit
-                        </button>
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            onClick={() => handleLoadEmrIntoForm(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-100 hover:text-emerald-700 font-bold text-xs transition"
+                            title="Open in Consultation Editor"
+                          >
+                            <FileText className="w-3.5 h-3.5" /> View
+                          </button>
+
+                          {/* Hidden Edit & Delete on hover */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleLoadEmrIntoForm(item)}
+                              className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800/60 transition"
+                              title="Edit Consultation EMR"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEmr(item)}
+                              className="p-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200 dark:border-rose-800/60 transition"
+                              title="Delete EMR Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -377,9 +469,17 @@ export default function DoctorEMRPage() {
         <div className="lg:col-span-2 bg-white dark:bg-[#111622] border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-6">
           {/* Header & Tabs */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <FileText className="w-4 h-4 text-emerald-600" /> Rogi Pariksha & Clinical Record
-            </h2>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                {editingEmrId ? 'Update Doctor Consultation EMR' : 'Rogi Pariksha & Clinical Record'}
+              </h2>
+              {editingEmrId && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  Editing record for {formData.patientName || 'Selected Patient'}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl text-xs">
               <button
                 type="button"
@@ -404,6 +504,22 @@ export default function DoctorEMRPage() {
               </button>
             </div>
           </div>
+
+          {editingEmrId && (
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-amber-600" />
+                <span>You are currently updating Doctor Consultation EMR for <strong>{formData.patientName || 'Patient'}</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-700 shadow-xs"
+              >
+                <X className="w-3.5 h-3.5" /> Cancel / Start New
+              </button>
+            </div>
+          )}
 
           <form onSubmit={requestSubmit} className="space-y-5">
             {/* Patient Selector */}
@@ -825,9 +941,10 @@ export default function DoctorEMRPage() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
+              className={`w-full py-3 ${editingEmrId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2`}
             >
-              <Save className="w-4 h-4" /> Save Ayurvedic Consultation & Rogi Pariksha
+              <Save className="w-4 h-4" />
+              {editingEmrId ? 'Update Doctor Consultation & Rogi Pariksha' : 'Save Ayurvedic Consultation & Rogi Pariksha'}
             </button>
           </form>
         </div>
@@ -871,11 +988,18 @@ export default function DoctorEMRPage() {
                     Symptoms: {item.symptoms}
                   </p>
 
-                  {item.ashtavidhaPariksha?.nadi && (
-                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400 pt-1 border-t border-slate-200/50 dark:border-slate-800">
-                      Nadi: {item.ashtavidhaPariksha.nadi}
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/50 dark:border-slate-800">
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 truncate max-w-[170px]">
+                      {item.ashtavidhaPariksha?.nadi ? `Nadi: ${item.ashtavidhaPariksha.nadi}` : (item.chikitsaType || 'Consultation')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadEmrIntoForm(item)}
+                      className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-0.5"
+                    >
+                      <Edit2 className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
                 </div>
               ))
             )}

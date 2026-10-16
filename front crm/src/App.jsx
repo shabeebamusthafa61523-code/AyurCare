@@ -93,11 +93,13 @@ import PrescriptionsPage from './pages/PrescriptionsPage';
 import LaboratoryPage from './pages/LaboratoryPage';
 import PharmacyInventoryPage from './pages/PharmacyInventoryPage';
 import BillingPage from './pages/BillingPage';
+import InvoicesPage from './pages/InvoicesPage';
 import DoctorsStaffPage from './pages/DoctorsStaffPage';
 import PatientFollowUpPage from './pages/PatientFollowUpPage';
 import PolyclinicReportsPage from './pages/PolyclinicReportsPage';
 import PanchakarmaPage from './pages/PanchakarmaPage';
 import ServicesPage from './pages/ServicesPage';
+import FamilyPatientsPage from './pages/FamilyPatientsPage';
 
 
 
@@ -214,6 +216,8 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PolyclinicDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/polyclinic-dashboard" element={<ProtectedRoute><MainLayout><PolyclinicDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/patient-enquiries" element={<ProtectedRoute><MainLayout><PatientEnquiriesPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/family-patients" element={<ProtectedRoute><MainLayout><FamilyPatientsPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/family" element={<ProtectedRoute><MainLayout><FamilyPatientsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><MainLayout><AppointmentsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/services" element={<ProtectedRoute><MainLayout><ServicesPage /></MainLayout></ProtectedRoute>} />
         <Route path="/reception-queue" element={<ProtectedRoute><MainLayout><ReceptionQueuePage /></MainLayout></ProtectedRoute>} />
@@ -221,7 +225,8 @@ function App() {
         <Route path="/prescriptions" element={<ProtectedRoute><MainLayout><PrescriptionsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/laboratory" element={<ProtectedRoute><MainLayout><LaboratoryPage /></MainLayout></ProtectedRoute>} />
         <Route path="/pharmacy-inventory" element={<ProtectedRoute><MainLayout><PharmacyInventoryPage /></MainLayout></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><MainLayout><BillingPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/invoices" element={<ProtectedRoute><MainLayout><InvoicesPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><MainLayout><InvoicesPage /></MainLayout></ProtectedRoute>} />
         <Route path="/panchakarma" element={<ProtectedRoute><MainLayout><PanchakarmaPage /></MainLayout></ProtectedRoute>} />
         <Route path="/doctors-staff" element={<ProtectedRoute><MainLayout><DoctorsStaffPage /></MainLayout></ProtectedRoute>} />
         <Route path="/patient-followups" element={<ProtectedRoute><MainLayout><PatientFollowUpPage /></MainLayout></ProtectedRoute>} />

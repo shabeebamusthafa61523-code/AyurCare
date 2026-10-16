@@ -16,11 +16,14 @@ const billingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Appointment'
   },
+  appointments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Appointment'
+  }],
   items: [{
     description: { type: String, required: true },
     category: {
       type: String,
-      enum: ['Consultation', 'Panchakarma / Therapy', 'Therapy Package', 'Aushadhi / Pharmacy', 'Consumable', 'Room / Day Care', 'Other'],
       default: 'Consultation'
     },
     qty: { type: Number, default: 1 },

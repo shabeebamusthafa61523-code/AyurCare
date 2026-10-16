@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Clock, Stethoscope, CheckCircle2, User, Plus, Search, Filter, Phone, MessageSquare, AlertCircle, X, Sparkles, Table, LayoutGrid } from 'lucide-react';
+import { Calendar, Clock, Stethoscope, CheckCircle2, User, Plus, Search, Filter, Phone, MessageSquare, AlertCircle, X, Sparkles, Table, LayoutGrid, Edit2, Trash2 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientDetailsModal from '../components/PatientDetailsModal';
@@ -17,6 +17,7 @@ export default function AppointmentsPage() {
 
   // Book Appointment Modal State
   const [showBookModal, setShowBookModal] = useState(false);
+  const [editingApptId, setEditingApptId] = useState(null);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [apptData, setApptData] = useState({
     doctor: '',
@@ -127,7 +128,7 @@ export default function AppointmentsPage() {
     const selectedS = services.find(s => s._id === apptData.service);
 
     try {
-      const res = await polyclinicService.createAppointment({
+      const payload = {
         patient: selectedPatientId,
         patientName: patient?.name,
         patientPhone: patient?.phone,
@@ -145,16 +146,27 @@ export default function AppointmentsPage() {
         consultationFee: Number(apptData.consultationFee) || 500,
         notes: apptData.notes,
         status: 'Scheduled'
-      });
+      };
+
+      let res;
+      if (editingApptId) {
+        res = await polyclinicService.updateAppointment(editingApptId, payload);
+      } else {
+        res = await polyclinicService.createAppointment(payload);
+      }
 
       if (res.success) {
         setShowBookModal(false);
+        const wasEditing = Boolean(editingApptId);
+        setEditingApptId(null);
         setSelectedPatientId('');
         fetchAppointments();
         setConfirmModal({
           isOpen: true,
-          title: 'Appointment Confirmed',
-          message: `Appointment ${res.appointment?.appointmentNo} (Token #${res.appointment?.tokenNumber}) successfully scheduled for ${patient?.name}.`,
+          title: wasEditing ? 'Appointment Updated' : 'Appointment Confirmed',
+          message: wasEditing 
+            ? `Appointment details for ${patient?.name || 'patient'} updated successfully.` 
+            : `Appointment ${res.appointment?.appointmentNo} (Token #${res.appointment?.tokenNumber}) successfully scheduled for ${patient?.name}.`,
           confirmText: 'Great!',
           variant: 'success',
           onConfirm: () => {}
@@ -164,13 +176,45 @@ export default function AppointmentsPage() {
       const errorMsg = err.response?.data?.message || err.message;
       setConfirmModal({
         isOpen: true,
-        title: 'Booking Blocked',
+        title: 'Action Blocked',
         message: errorMsg,
         confirmText: 'I Understand',
         variant: 'danger',
         onConfirm: () => {}
       });
     }
+  };
+
+  const handleOpenEditModal = (appt) => {
+    setEditingApptId(appt._id);
+    setSelectedPatientId(appt.patient?._id || appt.patient || '');
+    setApptData({
+      doctor: appt.doctor?._id || appt.doctor || '',
+      service: appt.service?._id || appt.service || '',
+      date: appt.date ? new Date(appt.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      timeSlot: appt.timeSlot || '10:00 AM - 10:30 AM',
+      consultationFee: appt.consultationFee || 600,
+      notes: appt.notes || ''
+    });
+    setShowBookModal(true);
+  };
+
+  const handleDeleteAppt = (appt) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Appointment',
+      message: `Are you sure you want to delete appointment (Token #${appt.tokenNumber || 1}) for ${appt.patientName}? This action cannot be undone.`,
+      confirmText: 'Delete Permanently',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await polyclinicService.deleteAppointment(appt._id);
+          fetchAppointments();
+        } catch (err) {
+          alert(err.response?.data?.message || err.message || 'Failed to delete appointment');
+        }
+      }
+    });
   };
 
   const requestStatusChange = (appt, newStatus) => {
@@ -297,7 +341,7 @@ export default function AppointmentsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredAppointments.map((appt) => (
-                  <tr key={appt._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                  <tr key={appt._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3.5 px-4">
                       <span className="font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-900/40 font-mono">
                         #{appt.tokenNumber || 1}
@@ -399,6 +443,24 @@ export default function AppointmentsPage() {
                             Complete
                           </button>
                         )}
+
+                        {/* Hidden Edit & Delete on hover */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditModal(appt)}
+                            className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800/60 transition"
+                            title="Edit Appointment"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAppt(appt)}
+                            className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200 dark:border-rose-800/60 transition"
+                            title="Delete Appointment"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -515,10 +577,10 @@ export default function AppointmentsPage() {
             <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-500" /> Book New Appointment
+                  <Calendar className="w-4 h-4 text-emerald-500" /> {editingApptId ? 'Edit Appointment' : 'Book New Appointment'}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Only 1 active appointment permitted per patient. Completed or cancelled appointments unlock new slots.
+                  {editingApptId ? 'Update date, time slot, doctor or treatment details.' : 'Only 1 active appointment permitted per patient. Completed or cancelled appointments unlock new slots.'}
                 </p>
               </div>
               <button
@@ -563,7 +625,7 @@ export default function AppointmentsPage() {
                     onChange={(e) => handleServiceChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-semibold"
                   >
-                    <option value="">-- General Vaidya Consultation (Default) --</option>
+                    <option value="">-- General Vaidya Consultation (Default: ₹500) --</option>
                     {services.map(s => (
                       <option key={s._id} value={s._id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                         {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
@@ -658,7 +720,7 @@ export default function AppointmentsPage() {
                   type="submit" 
                   className="px-5 py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl transition shadow-md shadow-emerald-500/20"
                 >
-                  Confirm Booking
+                  {editingApptId ? 'Save Changes' : 'Confirm Booking'}
                 </button>
               </div>
             </form>

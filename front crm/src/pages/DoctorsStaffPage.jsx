@@ -18,7 +18,9 @@ import {
   Droplet,
   Search,
   Table,
-  LayoutGrid
+  LayoutGrid,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -46,6 +48,7 @@ export default function DoctorsStaffPage() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingStaffId, setEditingStaffId] = useState(null);
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -103,6 +106,37 @@ export default function DoctorsStaffPage() {
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     try {
+      if (editingStaffId) {
+        const res = await polyclinicService.updateDoctorSchedule(editingStaffId, form);
+        if (res.success) {
+          setShowAddModal(false);
+          const name = form.doctorName;
+          setEditingStaffId(null);
+          setForm({
+            doctorName: '',
+            staffType: 'Vaidya (Ayurvedic Physician)',
+            gender: 'Female',
+            qualification: 'BAMS, MD (Ayurveda)',
+            specialization: 'Kayachikitsa & Panchakarma',
+            consultationFee: 500,
+            honorariumType: 'Percentage',
+            honorariumRate: 70,
+            availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            timeSlots: ['09:00 AM - 01:00 PM', '04:00 PM - 07:30 PM']
+          });
+          fetchDoctors();
+          setConfirmModal({
+            isOpen: true,
+            title: 'Staff Profile Updated',
+            message: `Staff member "${name}" profile was updated successfully.`,
+            confirmText: 'Great!',
+            variant: 'success',
+            onConfirm: () => {}
+          });
+        }
+        return;
+      }
+
       const res = await polyclinicService.createDoctorSchedule(form);
       if (res.success) {
         setShowAddModal(false);
@@ -134,6 +168,45 @@ export default function DoctorsStaffPage() {
     }
   };
 
+  const handleOpenEditStaff = (staff) => {
+    setEditingStaffId(staff._id);
+    setForm({
+      doctorName: staff.doctorName || '',
+      staffType: staff.staffType || 'Vaidya (Ayurvedic Physician)',
+      gender: staff.gender || 'Female',
+      qualification: staff.qualification || 'BAMS, MD (Ayurveda)',
+      specialization: staff.specialization || 'Kayachikitsa & Panchakarma',
+      consultationFee: staff.consultationFee || 500,
+      honorariumType: staff.honorariumType || 'Percentage',
+      honorariumRate: staff.honorariumRate || 70,
+      availableDays: staff.availableDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      timeSlots: staff.timeSlots || ['09:00 AM - 01:00 PM', '04:00 PM - 07:30 PM']
+    });
+    setShowAddModal(true);
+  };
+
+  const handleDeleteStaff = (staff) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Remove Staff Member',
+      message: `Are you sure you want to remove ${staff.doctorName}? This action cannot be undone.`,
+      confirmText: 'Delete Staff',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await polyclinicService.deleteDoctorSchedule(staff._id);
+          if (res.success) {
+            fetchDoctors();
+          } else {
+            alert(res.message || 'Failed to delete staff member');
+          }
+        } catch (err) {
+          alert(err.message || 'Error deleting staff member');
+        }
+      }
+    });
+  };
+
   const filteredDoctors = doctors.filter(doc => {
     const matchesSearch = (doc.doctorName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (doc.specialization || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,8 +232,23 @@ export default function DoctorsStaffPage() {
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto"
+          onClick={() => {
+            setEditingStaffId(null);
+            setForm({
+              doctorName: '',
+              staffType: 'Vaidya (Ayurvedic Physician)',
+              gender: 'Female',
+              qualification: 'BAMS, MD (Ayurveda)',
+              specialization: 'Kayachikitsa & Panchakarma',
+              consultationFee: 500,
+              honorariumType: 'Percentage',
+              honorariumRate: 70,
+              availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+              timeSlots: ['09:00 AM - 01:00 PM', '04:00 PM - 07:30 PM']
+            });
+            setShowAddModal(true);
+          }}
+          className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Add Practitioner / Staff
         </button>
@@ -246,12 +334,12 @@ export default function DoctorsStaffPage() {
                   <th className="py-3 px-4">Consultation Fee</th>
                   <th className="py-3 px-4">Honorarium</th>
                   <th className="py-3 px-4">Gender Modality</th>
-                  <th className="py-3 px-4 text-right">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {filteredDoctors.map((item) => (
-                  <tr key={item._id} className="hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
+                  <tr key={item._id} className="group hover:bg-emerald-50/40 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
@@ -302,9 +390,27 @@ export default function DoctorsStaffPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                        <CheckCircle2 className="w-3 h-3" /> Active
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                          <CheckCircle2 className="w-3 h-3" /> Active
+                        </span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditStaff(item)}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Edit Staff Member"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStaff(item)}
+                            className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-300 transition cursor-pointer"
+                            title="Delete Staff Member"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -376,7 +482,7 @@ export default function DoctorsStaffPage() {
           <div className="bg-white dark:bg-[#111622] rounded-3xl p-6 max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-500" /> Register Ayurvedic Practitioner / Staff
+                <Plus className="w-5 h-5 text-emerald-500" /> {editingStaffId ? 'Update Practitioner / Staff Profile' : 'Register Ayurvedic Practitioner / Staff'}
               </h2>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
@@ -488,9 +594,9 @@ export default function DoctorsStaffPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md cursor-pointer"
                 >
-                  Register Practitioner
+                  {editingStaffId ? 'Save Changes' : 'Register Practitioner'}
                 </button>
               </div>
             </form>

@@ -76,6 +76,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/polyclinic-dashboard', category: 'Overview' },
   { icon: UserCheck, label: 'Tokens & Queue', path: '/reception-queue', category: 'Reception' },
   { icon: PhoneCall, label: 'Patients', path: '/patient-enquiries', category: 'Patients' },
+  { icon: UsersRound, label: 'Family', path: '/family-patients', category: 'Patients' },
   { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Appointments' },
   { icon: HeartPulse, label: 'Services', path: '/services', category: 'Services' },
 
@@ -87,7 +88,7 @@ const menuItems = [
 
   // 3. Dispensary, Billing & Follow-up
   { icon: Tag, label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Dispensary' },
-  { icon: Receipt, label: 'Billing & Invoices', path: '/billing', category: 'Billing' },
+  { icon: Receipt, label: 'Invoices', path: '/invoices', category: 'Billing' },
   { icon: Clock, label: 'Follow-ups', path: '/patient-followups', category: 'Follow-ups' },
 
   // 4. Staff & Clinic Operations
