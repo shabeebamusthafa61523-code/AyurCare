@@ -21,20 +21,169 @@ import {
   PenTool,
   Edit2,
   Trash2,
-  X
+  X,
+  Pill,
+  Zap,
+  ArrowRight,
+  Clock,
+  Printer
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
+
+const AYURVEDIC_TEMPLATES = [
+  {
+    id: 'sandhivata',
+    icon: '🦴',
+    label: 'Sandhivata (Joint Pain / Osteoarthritis)',
+    shortLabel: 'Sandhivata (Joint Pain)',
+    color: 'emerald',
+    data: {
+      rogaNidana: 'Sandhivata (Osteoarthritis / Degenerative Joint Disorder)',
+      dushyaDhatu: 'Asthi & Majja Dhatu, Vata Prakopa, Sandhigata Vata',
+      prakriti: 'Vata-Kapha',
+      vikriti: 'Severe Vata Aggravation with Mild Avarana',
+      agni: 'Manda (Sluggish)',
+      koshtha: 'Krura (Hard)',
+      amaStatus: 'Niraama (Toxin Free)',
+      chikitsaType: 'Combined (Shamana + Shodhana)',
+      treatmentPlan: '14-day Janu Basti & Patra Pinda Sweda course alongside classical Shamana Aushadhis (Dhanwantharam Kashayam, Yogaraja Guggulu, Sahacharadi Tailam external application).',
+      pathyaApathya: {
+        pathyaAhara: 'Warm freshly cooked foods, barley/moong soup, cow ghee, warm spiced milk with dry ginger.',
+        apathyaAhara: 'Cold refrigerated items, raw cabbage, sprouts, sour yogurt at night, deep-fried snacks.',
+        pathyaVihara: 'Gentle non-weight bearing movement, warm sunlight exposure, early bedtime.',
+        apathyaVihara: 'Excessive stair climbing, prolonged standing, direct exposure to cold drafts or AC.'
+      },
+      consultationNotes: 'Advised strict adherence to warm water consumption and knee support during ambulation.'
+    }
+  },
+  {
+    id: 'amlapitta',
+    icon: '🔥',
+    label: 'Amlapitta (Hyperacidity / GERD)',
+    shortLabel: 'Amlapitta (Acidity / GERD)',
+    color: 'amber',
+    data: {
+      rogaNidana: 'Urdhvaga Amlapitta (Hyperacidity & Acid Reflux)',
+      dushyaDhatu: 'Rasa & Rakta Dhatu, Pitta Prakopa with Vidagdha Ajirna',
+      prakriti: 'Pitta-Vata',
+      vikriti: 'Sharp Pitta Aggravation with Ushna-Tikshna Guna',
+      agni: 'Tikshna (Sharp/Irregular)',
+      koshtha: 'Mridu (Soft)',
+      amaStatus: 'Saama (Toxic Accumulation)',
+      chikitsaType: 'Shamana (Palliative)',
+      treatmentPlan: 'Shamana Chikitsa with Pitta-Samana Aushadhis (Avipattikar Churna, Kamadudha Rasa, Shatavari Ghritam). Advised Takradhara if stress-induced.',
+      pathyaApathya: {
+        pathyaAhara: 'Puffed rice (Laja Manda), boiled barley water, pomegranate, soaked raisins, coconut water, cow milk.',
+        apathyaAhara: 'Chili, fermented/spicy gravies, tomato, vinegar, oily snacks, tea/coffee on empty stomach.',
+        pathyaVihara: 'Calm peaceful environment, regular meal timings, Shitali Pranayama.',
+        apathyaVihara: 'Anger, prolonged fasting, skipping meals, sleeping immediately after meals.'
+      },
+      consultationNotes: 'Patient advised to avoid late dinners and maintain 2-hour gap between meal and sleep.'
+    }
+  },
+  {
+    id: 'prameha',
+    icon: '🌾',
+    label: 'Prameha (Metabolic / Diabetes)',
+    shortLabel: 'Prameha (Metabolic Care)',
+    color: 'blue',
+    data: {
+      rogaNidana: 'Kaphaja Prameha / Madhumeha (Metabolic Disorder)',
+      dushyaDhatu: 'Medas, Kleda, Mamsa & Rakta Dhatu, Kapha-Vata',
+      prakriti: 'Kapha-Pitta',
+      vikriti: 'Kapha & Medo-Dhatvagni Mandya with Srotorodha',
+      agni: 'Manda (Sluggish)',
+      koshtha: 'Madhyama (Regular)',
+      amaStatus: 'Saama (Toxic Accumulation)',
+      chikitsaType: 'Combined (Shamana + Shodhana)',
+      treatmentPlan: 'Apatarpana Chikitsa: Nishakathakadi Kashayam, Chandraprabha Vati, Lodhrasavam. Recommended Udvartana (Dry herbal massage) course.',
+      pathyaApathya: {
+        pathyaAhara: 'Barley (Yava), horse gram soup, bitter gourd (Karela), methi seeds water, green gram.',
+        apathyaAhara: 'Sweets, refined carbs/maida, bananas, potatoes, curd, day sleep, excess rice.',
+        pathyaVihara: 'Brisk morning walking (45 mins), Surya Namaskar, active physical routine.',
+        apathyaVihara: 'Sedentary habits, sleeping during the day (Diva Swapna), overeating.'
+      },
+      consultationNotes: 'Advised daily FBS & PPBS log and periodic follow-up after 30 days.'
+    }
+  },
+  {
+    id: 'anidra',
+    icon: '🧠',
+    label: 'Anidra & Chinta (Insomnia & Stress)',
+    shortLabel: 'Anidra (Insomnia & Stress)',
+    color: 'purple',
+    data: {
+      rogaNidana: 'Anidra & Chittodwega (Chronic Insomnia & Neuro-stress)',
+      dushyaDhatu: 'Manovaha Srotas, Prana & Vyana Vata, Tarpaka Kapha Kshaya',
+      prakriti: 'Vata-Pitta',
+      vikriti: 'Vata Aggravation affecting Manas and Hridaya',
+      agni: 'Vishama (Irregular)',
+      koshtha: 'Madhyama (Regular)',
+      amaStatus: 'Niraama (Toxin Free)',
+      chikitsaType: 'Combined (Shamana + Shodhana)',
+      treatmentPlan: 'Shirodhara with Ksheerabala Tailam alongside Ashwagandharishta, Brahmi Vati, and Padabhyanga at bedtime.',
+      pathyaApathya: {
+        pathyaAhara: 'Warm cow milk with nutmeg & cardamom at night, almonds, freshly cooked rice with ghee.',
+        apathyaAhara: 'Caffeine, energy drinks, pungent spicy food at night, dry snacks.',
+        pathyaVihara: 'Warm foot massage with sesame oil before bed, digital detox 1 hr before sleep, meditation.',
+        apathyaVihara: 'Night vigil (Ratri Jagarana), screen time in bed, excessive worrying.'
+      },
+      consultationNotes: 'Recommended 7-day Shirodhara course in Panchakarma Wing.'
+    }
+  },
+  {
+    id: 'gridhrasi',
+    icon: '⚡',
+    label: 'Gridhrasi & Katishoola (Sciatica & Lumbar Pain)',
+    shortLabel: 'Gridhrasi (Sciatica / Back Pain)',
+    color: 'rose',
+    data: {
+      rogaNidana: 'Gridhrasi (Sciatica / Lumbar Radiculopathy)',
+      dushyaDhatu: 'Kandara, Snayu, Asthi & Majja Dhatu, Vata-Kapha',
+      prakriti: 'Vata-Kapha',
+      vikriti: 'Vata Aggravation in Kati & Sphik radiating down the leg',
+      agni: 'Manda (Sluggish)',
+      koshtha: 'Krura (Hard)',
+      amaStatus: 'Niraama (Toxin Free)',
+      chikitsaType: 'Combined (Shamana + Shodhana)',
+      treatmentPlan: 'Kati Basti with Mahanarayana Tailam, Patra Pinda Sweda, Rasnasaptakam Kashayam & Trayodashanga Guggulu.',
+      pathyaApathya: {
+        pathyaAhara: 'Warm light soups, garlic milk (Lashuna Ksheerapaka), drumstick soup, warm water.',
+        apathyaAhara: 'Heavy legumes, cold breeze, raw salads, cold drinks.',
+        pathyaVihara: 'Use firm mattress, lumbar support while sitting, gentle spinal stretches after warm fomentation.',
+        apathyaVihara: 'Bending forward with weights, prolonged bike rides on rough roads, jerky movements.'
+      },
+      consultationNotes: 'Advised strict avoidance of heavy lifting and prescribed 7-day Kati Basti course.'
+    }
+  }
+];
 
 export default function DoctorEMRPage() {
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [emrs, setEmrs] = useState([]);
+  const [pharmacyItems, setPharmacyItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('ayurvedic'); // 'ayurvedic' | 'vitals' | 'pathya'
   const [editingEmrId, setEditingEmrId] = useState(null);
+
+  // Fast Prescription Modal inside EMR
+  const [showRxModal, setShowRxModal] = useState(false);
+  const [rxForm, setRxForm] = useState({
+    patient: '',
+    patientName: '',
+    doctorName: 'Dr. Arya Warrier (BAMS, MD)',
+    diagnosis: '',
+    medicines: [
+      { name: '', dosage: '1 Tab / 15ml', frequency: 'Twice daily (After Food)', timing: 'After Food', duration: '14 Days', quantity: 1, anupana: 'Boiled warm water' }
+    ],
+    therapies: [],
+    pathyaApathyaNotes: ''
+  });
+  const [isSubmittingRx, setIsSubmittingRx] = useState(false);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -101,14 +250,16 @@ export default function DoctorEMRPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [patRes, apptRes, emrRes] = await Promise.all([
+      const [patRes, apptRes, emrRes, pharmRes] = await Promise.all([
         polyclinicService.getPatients(),
         polyclinicService.getAppointments(),
-        polyclinicService.getEmrRecords()
+        polyclinicService.getEmrRecords(),
+        polyclinicService.getPharmacyItems()
       ]);
 
       if (patRes.success) setPatients(patRes.patients || []);
       if (emrRes.success) setEmrs(emrRes.emrs || []);
+      if (pharmRes && pharmRes.success) setPharmacyItems(pharmRes.items || []);
 
       if (apptRes.success) {
         setAppointments(apptRes.appointments || []);
@@ -129,6 +280,23 @@ export default function DoctorEMRPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyTemplate = (tpl) => {
+    setFormData(prev => ({
+      ...prev,
+      rogaNidana: tpl.data.rogaNidana,
+      dushyaDhatu: tpl.data.dushyaDhatu,
+      prakriti: tpl.data.prakriti,
+      vikriti: tpl.data.vikriti,
+      agni: tpl.data.agni,
+      koshtha: tpl.data.koshtha,
+      amaStatus: tpl.data.amaStatus,
+      chikitsaType: tpl.data.chikitsaType,
+      treatmentPlan: tpl.data.treatmentPlan,
+      pathyaApathya: { ...tpl.data.pathyaApathya },
+      consultationNotes: tpl.data.consultationNotes
+    }));
   };
 
   const handlePatientSelect = (patientId) => {
@@ -219,6 +387,96 @@ export default function DoctorEMRPage() {
         }
       }
     });
+  };
+
+  const handleSaveAndPrescribe = async () => {
+    if (!formData.patient) {
+      alert('Please select a patient first.');
+      return;
+    }
+
+    try {
+      const isEditing = Boolean(editingEmrId);
+      const res = isEditing
+        ? await polyclinicService.updateEmrRecord(editingEmrId, formData)
+        : await polyclinicService.createEmrRecord(formData);
+
+      if (res.success) {
+        setRxForm({
+          patient: formData.patient,
+          patientName: formData.patientName,
+          doctorName: formData.doctorName || 'Dr. Arya Warrier (BAMS, MD)',
+          diagnosis: formData.rogaNidana || formData.diagnosis || '',
+          medicines: [
+            { name: '', dosage: '1 Tab / 15ml', frequency: 'Twice daily (After Food)', timing: 'After Food', duration: '14 Days', quantity: 1, anupana: 'Boiled warm water' }
+          ],
+          therapies: (formData.treatmentPlan || '').toLowerCase().includes('basti') || (formData.treatmentPlan || '').toLowerCase().includes('sweda') || (formData.treatmentPlan || '').toLowerCase().includes('dhara')
+            ? [{ name: 'Ayurvedic Therapy Course', sessions: '7 Sessions', frequency: 'Daily (Morning)', duration: '45 mins' }]
+            : [],
+          pathyaApathyaNotes: formData.pathyaApathya?.pathyaAhara
+            ? `Pathya (Recommended): ${formData.pathyaApathya.pathyaAhara} | Apathya (Avoid): ${formData.pathyaApathya.apathyaAhara || ''}`
+            : 'Drink boiled warm water. Avoid cold & refrigerated items.'
+        });
+        setShowRxModal(true);
+        fetchData();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Error saving consultation');
+    }
+  };
+
+  const handleCreateFastPrescription = async (dispenseNow = false) => {
+    if (!rxForm.patient) {
+      alert('Patient reference missing.');
+      return;
+    }
+    const validMeds = (rxForm.medicines || []).filter(m => m.name && m.name.trim());
+    if (validMeds.length === 0 && (rxForm.therapies || []).length === 0) {
+      alert('Please enter at least one medicine or therapy.');
+      return;
+    }
+
+    try {
+      setIsSubmittingRx(true);
+      const payload = {
+        patient: rxForm.patient,
+        patientName: rxForm.patientName,
+        doctorName: rxForm.doctorName,
+        diagnosis: rxForm.diagnosis,
+        medicines: validMeds,
+        therapies: rxForm.therapies,
+        pathyaApathyaNotes: rxForm.pathyaApathyaNotes
+      };
+
+      const res = await polyclinicService.createPrescription(payload);
+      if (res.success) {
+        const createdRx = res.prescription;
+        if (dispenseNow && createdRx?._id) {
+          try {
+            await polyclinicService.dispensePrescription(createdRx._id);
+          } catch (dispErr) {
+            console.error('Dispense error:', dispErr);
+          }
+        }
+        setShowRxModal(false);
+        setConfirmModal({
+          isOpen: true,
+          title: 'Prescription Issued Successfully',
+          message: `Prescription ${createdRx?.prescriptionNo || ''} has been created for ${rxForm.patientName}${dispenseNow ? ' and sent to pharmacy (stock deducted & added to bill).' : '.'}`,
+          confirmText: 'Done',
+          variant: 'success',
+          onConfirm: () => {
+            handleCancelEdit();
+            fetchData();
+            setViewMode('table');
+          }
+        });
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Failed to issue prescription');
+    } finally {
+      setIsSubmittingRx(false);
+    }
   };
 
   const handleLoadEmrIntoForm = (item) => {
@@ -528,7 +786,7 @@ export default function DoctorEMRPage() {
               <select
                 value={formData.patient}
                 onChange={(e) => handlePatientSelect(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 font-semibold"
                 required
               >
                 <option value="">-- Choose Patient for Clinical Consultation --</option>
@@ -538,6 +796,31 @@ export default function DoctorEMRPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Quick Ayurvedic Clinical Templates */}
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/70 dark:border-emerald-800/40 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-black text-emerald-950 dark:text-emerald-300 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  Quick Clinical Presets (1-Click Pariksha &amp; Protocol)
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Autofills diagnosis, dosha &amp; pathya</span>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                {AYURVEDIC_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => handleApplyTemplate(tpl)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300/80 dark:border-emerald-700/80 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-800 dark:text-slate-200 text-xs font-bold whitespace-nowrap shadow-xs transition active:scale-95"
+                    title={`Apply protocol for ${tpl.label}`}
+                  >
+                    <span>{tpl.icon}</span>
+                    <span>{tpl.shortLabel}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* TAB 1: AYURVEDIC DOSHA & ASHTAVIDHA PARIKSHA */}
@@ -939,13 +1222,25 @@ export default function DoctorEMRPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              className={`w-full py-3 ${editingEmrId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-bold text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2`}
-            >
-              <Save className="w-4 h-4" />
-              {editingEmrId ? 'Update Doctor Consultation & Rogi Pariksha' : 'Save Ayurvedic Consultation & Rogi Pariksha'}
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleSaveAndPrescribe}
+                className="w-full sm:flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-2xl shadow-xl transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <Pill className="w-4 h-4" />
+                <span>Save &amp; Write Prescription</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="submit"
+                className={`w-full sm:w-auto px-6 py-3 ${editingEmrId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600'} text-white font-bold text-xs rounded-2xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer`}
+              >
+                <Save className="w-4 h-4" />
+                <span>{editingEmrId ? 'Update EMR Only' : 'Save EMR Only'}</span>
+              </button>
+            </div>
           </form>
         </div>
 
@@ -1006,6 +1301,245 @@ export default function DoctorEMRPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* Fast Prescription Modal inside EMR */}
+      {showRxModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-xl">
+                  <Pill className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    Issue Ayurvedic Prescription
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Patient: <strong>{rxForm.patientName}</strong> | Doctor: <strong>{rxForm.doctorName}</strong>
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowRxModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Prescribed Medicines List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Prescribed Medicines (Aushadhi)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setRxForm(prev => ({
+                    ...prev,
+                    medicines: [...prev.medicines, { name: '', dosage: '1 Tab / 15ml', frequency: 'Twice daily (After Food)', timing: 'After Food', duration: '14 Days', quantity: 1, anupana: 'Boiled warm water' }]
+                  }))}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> Add Medicine
+                </button>
+              </div>
+
+              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                {rxForm.medicines.map((med, idx) => {
+                  const cleanName = (med.name || '').trim().toLowerCase();
+                  const matchedStock = pharmacyItems.find(p => (p.name || '').toLowerCase() === cleanName || (p.name || '').toLowerCase().startsWith(cleanName));
+                  return (
+                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-400">#{idx + 1}</span>
+                          {med.name && matchedStock ? (
+                            matchedStock.quantity > 5 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                                🟢 In Stock: {matchedStock.quantity} {matchedStock.unit || 'units'} (₹{matchedStock.sellingPrice || 150})
+                              </span>
+                            ) : matchedStock.quantity > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[10px]">
+                                🟡 Low Stock: {matchedStock.quantity}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-bold text-[10px]">
+                                🔴 Out of Stock
+                              </span>
+                            )
+                          ) : null}
+                        </div>
+                        {rxForm.medicines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setRxForm(prev => ({
+                              ...prev,
+                              medicines: prev.medicines.filter((_, i) => i !== idx)
+                            }))}
+                            className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Medicine Name *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Dhanwantharam Kashayam, Triphala..."
+                            value={med.name}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRxForm(prev => {
+                                const arr = [...prev.medicines];
+                                arr[idx].name = val;
+                                return { ...prev, medicines: arr };
+                              });
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                            list={`rx-datalist-${idx}`}
+                          />
+                          <datalist id={`rx-datalist-${idx}`}>
+                            {pharmacyItems.map((item, i) => (
+                              <option key={i} value={item.name}>
+                                {item.name} (Stock: {item.quantity} | ₹{item.sellingPrice || 150})
+                              </option>
+                            ))}
+                          </datalist>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Dosage</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 1 Tab / 15ml"
+                            value={med.dosage}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRxForm(prev => {
+                                const arr = [...prev.medicines];
+                                arr[idx].dosage = val;
+                                return { ...prev, medicines: arr };
+                              });
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Timing</label>
+                          <select
+                            value={med.timing}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRxForm(prev => {
+                                const arr = [...prev.medicines];
+                                arr[idx].timing = val;
+                                return { ...prev, medicines: arr };
+                              });
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                          >
+                            <option value="Before Food">Before Food</option>
+                            <option value="After Food">After Food</option>
+                            <option value="Empty Stomach">Empty Stomach</option>
+                            <option value="Bedtime">Bedtime</option>
+                            <option value="External Application">External Application</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Anupana (Carrier)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Boiled warm water, Honey, Milk"
+                            value={med.anupana}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRxForm(prev => {
+                                const arr = [...prev.medicines];
+                                arr[idx].anupana = val;
+                                return { ...prev, medicines: arr };
+                              });
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Duration</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 7 Days, 14 Days"
+                            value={med.duration}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRxForm(prev => {
+                                const arr = [...prev.medicines];
+                                arr[idx].duration = val;
+                                return { ...prev, medicines: arr };
+                              });
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pathya Notes */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Dietary &amp; Lifestyle Regimen (Pathya-Apathya)
+              </label>
+              <textarea
+                rows="2"
+                value={rxForm.pathyaApathyaNotes}
+                onChange={(e) => setRxForm(prev => ({ ...prev, pathyaApathyaNotes: e.target.value }))}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
+                placeholder="Dietary instructions for the patient..."
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={isSubmittingRx}
+                onClick={() => handleCreateFastPrescription(true)}
+                className="w-full sm:flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Issue &amp; Dispense to Bill</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isSubmittingRx}
+                onClick={() => handleCreateFastPrescription(false)}
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Issue Only (Prescription Slip)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowRxModal(false)}
+                className="w-full sm:w-auto px-4 py-2.5 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirmation Modal */}

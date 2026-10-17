@@ -99,6 +99,10 @@ export const polyclinicService = {
     const res = await axios.delete(`${API_URL}/v1/polyclinic/prescriptions/${id}`, getAuthHeaders());
     return res.data;
   },
+  dispensePrescription: async (id) => {
+    const res = await axios.post(`${API_URL}/v1/polyclinic/prescriptions/${id}/dispense`, {}, getAuthHeaders());
+    return res.data;
+  },
 
   // Laboratory
   getLabTests: async () => {

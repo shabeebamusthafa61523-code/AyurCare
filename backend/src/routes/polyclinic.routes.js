@@ -19,6 +19,7 @@ import {
   createPrescription,
   updatePrescription,
   deletePrescription,
+  dispensePrescription,
   getLabTests,
   createLabTest,
   updateLabTest,
@@ -84,6 +85,7 @@ router.get('/prescriptions', getPrescriptions);
 router.post('/prescriptions', createPrescription);
 router.put('/prescriptions/:id', updatePrescription);
 router.delete('/prescriptions/:id', deletePrescription);
+router.post('/prescriptions/:id/dispense', dispensePrescription);
 
 // Laboratory
 router.get('/lab-tests', getLabTests);

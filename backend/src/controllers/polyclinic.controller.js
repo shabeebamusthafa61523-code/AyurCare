@@ -1257,6 +1257,130 @@ export const deletePrescription = async (req, res) => {
   }
 };
 
+export const dispensePrescription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prescription = await Prescription.findById(id).populate('patient');
+    if (!prescription) {
+      return res.status(404).json({ success: false, message: 'Prescription not found' });
+    }
+    if (prescription.dispensed) {
+      return res.status(400).json({ success: false, message: 'This prescription has already been dispensed and billed.' });
+    }
+
+    let patientId = prescription.patient?._id || prescription.patient;
+    let patientName = prescription.patientName || prescription.patient?.name || 'Patient';
+
+    if (!patientId && prescription.patientName) {
+      const p = await Patient.findOne({ name: prescription.patientName });
+      if (p) patientId = p._id;
+    }
+
+    const inventoryUpdates = [];
+    const billedItems = [];
+
+    // Process prescribed medicines against pharmacy inventory
+    for (const med of (prescription.medicines || [])) {
+      const medName = (med.name || '').trim();
+      if (!medName) continue;
+
+      const qty = Number(med.quantity) || 1;
+      let unitPrice = 160; // standard Ayurvedic classical medicine default rate
+      let matchedItem = null;
+
+      try {
+        const escapedName = medName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        matchedItem = await PharmacyInventory.findOne({
+          $or: [
+            { name: { $regex: new RegExp(`^${escapedName}$`, 'i') } },
+            { name: { $regex: new RegExp(medName.split(' ')[0], 'i') } }
+          ]
+        });
+      } catch (_) {}
+
+      if (matchedItem) {
+        matchedItem.quantity = Math.max(0, (matchedItem.quantity || 0) - qty);
+        await matchedItem.save();
+        if (matchedItem.sellingPrice) unitPrice = matchedItem.sellingPrice;
+        inventoryUpdates.push({
+          name: matchedItem.name,
+          remainingStock: matchedItem.quantity,
+          deducted: qty
+        });
+      }
+
+      billedItems.push({
+        description: `Ayurvedic Medicine: ${medName}${med.dosage ? ` (${med.dosage})` : ''}`,
+        category: 'Pharmacy',
+        qty,
+        unitPrice,
+        amount: unitPrice * qty
+      });
+    }
+
+    // Attach medicines to patient's daily invoice
+    let updatedInvoice = null;
+    if (billedItems.length > 0 && patientId) {
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      let invoice = await Billing.findOne({
+        patient: patientId,
+        date: { $gte: startOfDay, $lte: endOfDay }
+      });
+
+      if (invoice) {
+        billedItems.forEach(item => {
+          invoice.items.push(item);
+        });
+        invoice.totalAmount = (invoice.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        invoice.netAmount = Math.max(0, invoice.totalAmount - (invoice.discount || 0) + (invoice.tax || 0));
+        invoice.pendingAmount = Math.max(0, invoice.netAmount - (invoice.paidAmount || 0));
+        invoice.status = invoice.pendingAmount <= 0 ? 'Paid' : (invoice.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+        await invoice.save();
+        updatedInvoice = invoice;
+      } else {
+        const count = await Billing.countDocuments();
+        const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
+        const totalAmount = billedItems.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        updatedInvoice = await Billing.create({
+          invoiceNo,
+          patient: patientId,
+          patientName,
+          items: billedItems,
+          totalAmount,
+          discount: 0,
+          tax: 0,
+          netAmount: totalAmount,
+          paidAmount: 0,
+          pendingAmount: totalAmount,
+          status: 'Pending',
+          paymentMode: 'Cash',
+          date: today
+        });
+      }
+    }
+
+    prescription.dispensed = true;
+    prescription.dispensedAt = new Date();
+    prescription.dispensedBy = req.user?.name || 'Pharmacy Counter';
+    await prescription.save();
+
+    res.json({
+      success: true,
+      message: `Prescription dispensed successfully! Deducted stock for ${inventoryUpdates.length} items and added ${billedItems.length} line items to patient's daily bill.`,
+      prescription,
+      inventoryUpdates,
+      invoice: updatedInvoice
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 6. Laboratory & Diagnostic Management
 export const getLabTests = async (req, res) => {
   try {

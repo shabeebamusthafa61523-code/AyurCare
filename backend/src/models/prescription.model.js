@@ -56,6 +56,17 @@ const prescriptionSchema = new mongoose.Schema({
     type: String,
     default: 'Drink boiled warm water. Avoid cold drinks, oily foods, curd at night, and fermented food.'
   },
+  dispensed: {
+    type: Boolean,
+    default: false
+  },
+  dispensedAt: {
+    type: Date
+  },
+  dispensedBy: {
+    type: String,
+    default: ''
+  },
   notes: { type: String, default: '' }
 }, { timestamps: true });
 
