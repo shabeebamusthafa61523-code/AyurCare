@@ -12,9 +12,12 @@ import {
   Droplet,
   BookOpen,
   Building,
-  Filter
+  Filter,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const CATEGORIES = [
   'All',
@@ -52,6 +55,17 @@ export default function PharmacyInventoryPage() {
     location: 'Rack A - Kashaya Shala',
     expiryDate: ''
   });
+  const [editingItemId, setEditingItemId] = useState(null);
+
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    variant: 'primary',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     fetchItems();
@@ -72,39 +86,91 @@ export default function PharmacyInventoryPage() {
   const handleCreateItem = async (e) => {
     e.preventDefault();
     try {
-      const count = items.length;
-      const prefix = newItem.category.substring(0, 3).toUpperCase();
-      const itemCode = `${prefix}-${101 + count}`;
-      const res = await polyclinicService.createPharmacyItem({
+      const payload = {
         ...newItem,
-        itemCode,
         quantity: Number(newItem.quantity),
         purchasePrice: Number(newItem.purchasePrice),
         sellingPrice: Number(newItem.sellingPrice),
         minStockLevel: Number(newItem.minStockLevel)
-      });
-      if (res.success) {
-        setShowModal(false);
-        setNewItem({
-          name: '',
-          category: 'Kashayam',
-          classicalReference: 'Sahasrayogam',
-          manufacturer: 'Kottakkal Arya Vaidya Sala',
-          batchNumber: 'BATCH-2026',
-          quantity: 50,
-          unit: 'Bottles',
-          minStockLevel: 10,
-          purchasePrice: 160,
-          sellingPrice: 220,
-          supplier: 'AVS Kottakkal Depot',
-          location: 'Rack A - Kashaya Shala',
-          expiryDate: ''
+      };
+
+      if (editingItemId) {
+        const res = await polyclinicService.updatePharmacyItem(editingItemId, payload);
+        if (res.success) {
+          setShowModal(false);
+          setEditingItemId(null);
+          fetchItems();
+        }
+      } else {
+        const count = items.length;
+        const prefix = newItem.category.substring(0, 3).toUpperCase();
+        const itemCode = `${prefix}-${101 + count}`;
+        const res = await polyclinicService.createPharmacyItem({
+          ...payload,
+          itemCode
         });
-        fetchItems();
+        if (res.success) {
+          setShowModal(false);
+          fetchItems();
+        }
       }
+
+      setNewItem({
+        name: '',
+        category: 'Kashayam',
+        classicalReference: 'Sahasrayogam',
+        manufacturer: 'Kottakkal Arya Vaidya Sala',
+        batchNumber: 'BATCH-2026',
+        quantity: 50,
+        unit: 'Bottles',
+        minStockLevel: 10,
+        purchasePrice: 160,
+        sellingPrice: 220,
+        supplier: 'AVS Kottakkal Depot',
+        location: 'Rack A - Kashaya Shala',
+        expiryDate: ''
+      });
     } catch (err) {
-      alert(err.message);
+      alert(err.response?.data?.message || err.message);
     }
+  };
+
+  const handleOpenEditModal = (item) => {
+    setEditingItemId(item._id);
+    setNewItem({
+      name: item.name || '',
+      category: item.category || 'Kashayam',
+      classicalReference: item.classicalReference || '',
+      manufacturer: item.manufacturer || '',
+      batchNumber: item.batchNumber || '',
+      quantity: item.quantity || 0,
+      unit: item.unit || 'Bottles',
+      minStockLevel: item.minStockLevel || 10,
+      purchasePrice: item.purchasePrice || 0,
+      sellingPrice: item.sellingPrice || 0,
+      supplier: item.supplier || '',
+      location: item.location || '',
+      expiryDate: item.expiryDate ? item.expiryDate.split('T')[0] : ''
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteItem = (item) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Aushadhi Formulation',
+      message: `Are you sure you want to delete "${item.name}" (${item.itemCode || ''}) from the dispensary inventory? This action cannot be undone.`,
+      confirmText: 'Delete Permanently',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await polyclinicService.deletePharmacyItem(item._id);
+          fetchItems();
+        } catch (err) {
+          alert(err.response?.data?.message || err.message || 'Failed to delete item');
+        }
+      }
+    });
   };
 
   const filteredItems = items.filter(i => {
@@ -243,11 +309,12 @@ export default function PharmacyInventoryPage() {
                 <th className="py-3.5 px-3 font-bold">Batch & Location</th>
                 <th className="py-3.5 px-3 font-bold text-center">Stock</th>
                 <th className="py-3.5 px-3 font-bold text-right">Price (₹)</th>
+                <th className="py-3.5 px-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
               {filteredItems.map(item => (
-                <tr key={item._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
+                <tr key={item._id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
                   <td className="py-3 px-4">
                     <div className="font-bold text-slate-900 dark:text-white text-xs">{item.name}</div>
                     <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
@@ -281,6 +348,24 @@ export default function PharmacyInventoryPage() {
                     <div className="font-bold text-slate-900 dark:text-white">₹{item.sellingPrice}</div>
                     <div className="text-[10px] text-slate-400">Cost: ₹{item.purchasePrice}</div>
                   </td>
+                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 inline-flex items-center gap-1 justify-end">
+                      <button
+                        onClick={() => handleOpenEditModal(item)}
+                        className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800/60 transition"
+                        title="Edit Formulation"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item)}
+                        className="p-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200 dark:border-rose-800/60 transition"
+                        title="Delete Medicine"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -294,9 +379,9 @@ export default function PharmacyInventoryPage() {
           <div className="bg-white dark:bg-[#111622] rounded-3xl p-6 max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-500" /> Add New Aushadhi Formulation
+                <Plus className="w-5 h-5 text-emerald-500" /> {editingItemId ? 'Edit Aushadhi Formulation' : 'Add New Aushadhi Formulation'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => { setShowModal(false); setEditingItemId(null); }} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -417,7 +502,7 @@ export default function PharmacyInventoryPage() {
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => { setShowModal(false); setEditingItemId(null); }}
                   className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                 >
                   Cancel
@@ -426,13 +511,24 @@ export default function PharmacyInventoryPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
                 >
-                  Add to Dispensary
+                  {editingItemId ? 'Update Formulation' : 'Add to Dispensary'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        variant={confirmModal.variant}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

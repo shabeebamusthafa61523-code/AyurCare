@@ -35,6 +35,14 @@ const appointmentSchema = new mongoose.Schema({
   },
   tokenNumber: { type: Number, default: 0 },
   consultationFee: { type: Number, default: 0 },
+  service: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClinicService'
+  },
+  serviceName: { type: String, default: '' },
+  serviceCategory: { type: String, default: '' },
+  servicePrice: { type: Number, default: 0 },
+  serviceDuration: { type: String, default: '' },
   notes: { type: String, default: '' },
   checkInTime: { type: Date },
   consultationStartTime: { type: Date },

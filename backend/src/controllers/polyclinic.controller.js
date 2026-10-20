@@ -10,6 +10,7 @@ import DoctorSchedule from '../models/doctorSchedule.model.js';
 import User from '../models/user.model.js';
 import Lead from '../models/lead.model.js';
 import Panchakarma from '../models/panchakarma.model.js';
+import ClinicService from '../models/clinicService.model.js';
 
 // Seed Initial Ayurvedic Hospital Demo Data
 export const seedPolyclinicData = async () => {
@@ -514,6 +515,87 @@ export const seedPolyclinicData = async () => {
 
       console.log('✅ Authentic Ayurvedic Hospital demo data successfully seeded!');
     }
+
+    // Seed Clinic Services if none exist
+    const serviceCount = await ClinicService.countDocuments();
+    if (serviceCount === 0) {
+      console.log('🌿 Seeding authentic Ayurvedic clinic services...');
+      await ClinicService.insertMany([
+        {
+          name: 'Doctor Consultation',
+          category: 'Consultation',
+          price: 500,
+          duration: '30 mins',
+          description: 'Comprehensive Ashtavidha Pariksha, Nadi Pariksha (pulse analysis), and personalized Ayurvedic clinical consultation.',
+          status: 'Active'
+        },
+        {
+          name: 'Senior Vaidya / Kayachikitsa Specialist Consultation',
+          category: 'Consultation',
+          price: 800,
+          duration: '45 mins',
+          description: 'Specialist consultation for chronic ailments, metabolic disorders, and autoimmune conditions.',
+          status: 'Active'
+        },
+        {
+          name: 'Shirodhara (Continuous Medicated Oil Flow)',
+          category: 'Panchakarma Therapy',
+          price: 1500,
+          duration: '60 mins',
+          description: 'Continuous pouring of warm medicated herbal oil (Ksheerabala/Brahmi) onto the forehead for stress relief, insomnia, and nervous disorders.',
+          status: 'Active'
+        },
+        {
+          name: 'Abhyanga (Classical Full Body Herbal Massage)',
+          category: 'Panchakarma Therapy',
+          price: 1200,
+          duration: '60 mins',
+          description: 'Rhythmic, synchronized whole-body warm herbal oil massage to tone tissues, nourish skin, and pacify aggravated Vata.',
+          status: 'Active'
+        },
+        {
+          name: 'Janu Basti (Knee Joint Oil Pool Therapy)',
+          category: 'Panchakarma Therapy',
+          price: 1000,
+          duration: '45 mins',
+          description: 'Warm medicated oil retained in a herbal dough ring around the knees for osteoarthritis, stiffness, and joint mobility.',
+          status: 'Active'
+        },
+        {
+          name: 'Kati Basti (Lumbar Spine Therapy)',
+          category: 'Panchakarma Therapy',
+          price: 1100,
+          duration: '45 mins',
+          description: 'Localized warm medicated oil pooling on the lumbosacral region for back pain, sciatica, and disc conditions.',
+          status: 'Active'
+        },
+        {
+          name: 'Njavarakizhi (Shashtika Shali Pinda Sweda)',
+          category: 'Panchakarma Therapy',
+          price: 1800,
+          duration: '60 mins',
+          description: 'Nourishing bolus massage using red rice cooked in milk and herbal decoction for neuromuscular strength and rejuvenation.',
+          status: 'Active'
+        },
+        {
+          name: 'Mukhalepam & Herbal Facial Care',
+          category: 'Wellness & Rejuvenation',
+          price: 800,
+          duration: '45 mins',
+          description: 'Traditional facial cleansing, herbal massage, and Ayurvedic ubtan pack for glowing complexion.',
+          status: 'Active'
+        },
+        {
+          name: 'Nadi Pariksha & Diet Counseling Review',
+          category: 'Consultation',
+          price: 600,
+          duration: '30 mins',
+          description: 'Ayurvedic pulse examination, dosha balance evaluation, and seasonal Pathya-Apathya guidelines.',
+          status: 'Active'
+        }
+      ]);
+      console.log('✅ Ayurvedic clinic services seeded successfully!');
+    }
   } catch (err) {
     console.error('⚠️ Ayurvedic Hospital seeding notice:', err.message);
   }
@@ -638,6 +720,26 @@ export const getPatientById = async (req, res) => {
   }
 };
 
+export const updatePatient = async (req, res) => {
+  try {
+    const updated = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: 'Patient not found' });
+    res.json({ success: true, patient: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deletePatient = async (req, res) => {
+  try {
+    const deleted = await Patient.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Patient not found' });
+    res.json({ success: true, message: 'Patient deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 3. Appointments & Queue Management
 export const getAppointments = async (req, res) => {
   try {
@@ -713,6 +815,22 @@ export const createAppointment = async (req, res) => {
     const todayCount = await Appointment.countDocuments({ date: { $gte: dateStart, $lte: dateEnd } });
     const tokenNumber = todayCount + 1;
 
+    let serviceId = req.body.service || req.body.serviceId || null;
+    let serviceName = req.body.serviceName || '';
+    let serviceCategory = req.body.serviceCategory || '';
+    let servicePrice = req.body.servicePrice !== undefined ? Number(req.body.servicePrice) : 0;
+    let serviceDuration = req.body.serviceDuration || '';
+
+    if (serviceId) {
+      const s = await ClinicService.findById(serviceId);
+      if (s) {
+        if (!serviceName) serviceName = s.name;
+        if (!serviceCategory) serviceCategory = s.category;
+        if (!servicePrice) servicePrice = s.price;
+        if (!serviceDuration) serviceDuration = s.duration;
+      }
+    }
+
     const appointment = await Appointment.create({
       ...req.body,
       patient: patientId,
@@ -722,6 +840,11 @@ export const createAppointment = async (req, res) => {
       timeSlot,
       appointmentNo,
       tokenNumber,
+      service: serviceId || null,
+      serviceName,
+      serviceCategory,
+      servicePrice: servicePrice || Number(req.body.consultationFee) || 0,
+      serviceDuration,
       patientName: patientName || 'Patient',
       patientPhone: patientPhone || ''
     });
@@ -729,6 +852,140 @@ export const createAppointment = async (req, res) => {
     res.status(201).json({ success: true, appointment, data: appointment });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const createInvoiceForCompletedAppointment = async (appointmentId) => {
+  try {
+    const appt = await Appointment.findById(appointmentId).populate('patient');
+    if (!appt) return null;
+
+    // Check if an invoice already exists for this appointment
+    const alreadyBilled = await Billing.findOne({
+      $or: [
+        { appointment: appt._id },
+        { appointments: appt._id }
+      ]
+    });
+    if (alreadyBilled) return alreadyBilled;
+
+    let patientId = appt.patient?._id || appt.patient;
+    let patientName = appt.patientName || appt.patient?.name || 'Patient';
+
+    if (!patientId) {
+      if (appt.patientPhone) {
+        const found = await Patient.findOne({ phone: appt.patientPhone });
+        if (found) {
+          patientId = found._id;
+          if (!patientName) patientName = found.name;
+        }
+      }
+      if (!patientId) {
+        const anyPatient = await Patient.findOne();
+        if (anyPatient) {
+          patientId = anyPatient._id;
+          if (!patientName) patientName = anyPatient.name;
+        }
+      }
+    }
+
+    if (!patientId) return null;
+
+    const serviceName = appt.serviceName || appt.appointmentType || 'Vaidya Consultation';
+    let mappedCategory = 'Consultation';
+    const catLower = (appt.serviceCategory || '').toLowerCase();
+    if (catLower.includes('panchakarma') || catLower.includes('therapy') || catLower.includes('kriya') || catLower.includes('wellness')) {
+      mappedCategory = 'Panchakarma / Therapy';
+    } else if (catLower.includes('package')) {
+      mappedCategory = 'Therapy Package';
+    }
+
+    const price = Number(appt.servicePrice || appt.consultationFee || 500);
+    const desc = appt.serviceName
+      ? `Ayurvedic Service: ${appt.serviceName}${appt.serviceDuration ? ` (${appt.serviceDuration})` : ''} - Vaidya: ${appt.doctorName || 'Doctor'}`
+      : `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`;
+
+    const apptDate = appt.date ? new Date(appt.date) : new Date();
+    const startOfDay = new Date(apptDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(apptDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Check if single daily invoice already exists for this patient on this date
+    let existingDailyInvoice = await Billing.findOne({
+      patient: patientId,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (existingDailyInvoice) {
+      // Append appointment service to existing daily invoice
+      const alreadyHasDesc = (existingDailyInvoice.items || []).some(i => i.description === desc);
+      if (!alreadyHasDesc) {
+        existingDailyInvoice.items.push({
+          description: desc,
+          category: mappedCategory,
+          qty: 1,
+          unitPrice: price,
+          amount: price
+        });
+      }
+
+      if (!existingDailyInvoice.appointments) existingDailyInvoice.appointments = [];
+      if (existingDailyInvoice.appointment && !existingDailyInvoice.appointments.some(a => a.toString() === existingDailyInvoice.appointment.toString())) {
+        existingDailyInvoice.appointments.push(existingDailyInvoice.appointment);
+      }
+      if (!existingDailyInvoice.appointments.some(a => a.toString() === appt._id.toString())) {
+        existingDailyInvoice.appointments.push(appt._id);
+      }
+
+      existingDailyInvoice.totalAmount = (existingDailyInvoice.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      existingDailyInvoice.netAmount = Math.max(0, existingDailyInvoice.totalAmount - (existingDailyInvoice.discount || 0) + (existingDailyInvoice.tax || 0));
+      existingDailyInvoice.pendingAmount = Math.max(0, existingDailyInvoice.netAmount - (existingDailyInvoice.paidAmount || 0));
+      existingDailyInvoice.status = existingDailyInvoice.pendingAmount <= 0 ? 'Paid' : (existingDailyInvoice.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+      await existingDailyInvoice.save();
+      return existingDailyInvoice;
+    }
+
+    const count = await Billing.countDocuments();
+    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
+
+    const items = [{
+      description: desc,
+      category: mappedCategory,
+      qty: 1,
+      unitPrice: price,
+      amount: price
+    }];
+
+    const totalAmount = price;
+    const netAmount = price;
+    const paidAmount = 0;
+    const pendingAmount = price;
+    const status = 'Pending';
+
+    const invoice = await Billing.create({
+      invoiceNo,
+      patient: patientId,
+      patientName,
+      appointment: appt._id,
+      appointments: [appt._id],
+      items,
+      totalAmount,
+      discount: 0,
+      tax: 0,
+      netAmount,
+      paidAmount,
+      pendingAmount,
+      status,
+      paymentMode: 'Cash',
+      date: apptDate
+    });
+
+    return invoice;
+  } catch (err) {
+    console.error('Error auto-creating invoice for completed appointment:', err);
+    return null;
   }
 };
 
@@ -741,9 +998,35 @@ export const updateAppointmentStatus = async (req, res) => {
     if (status === 'Completed') updateFields.consultationEndTime = new Date();
 
     const appointment = await Appointment.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+
+    // If appointment is completed, auto-generate service invoice!
+    if (status === 'Completed' && appointment) {
+      await createInvoiceForCompletedAppointment(appointment._id);
+    }
+
     res.json({ success: true, appointment, data: appointment });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updateAppointment = async (req, res) => {
+  try {
+    const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: 'Appointment not found' });
+    res.json({ success: true, appointment: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteAppointment = async (req, res) => {
+  try {
+    const deleted = await Appointment.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Appointment not found' });
+    res.json({ success: true, message: 'Appointment deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -795,6 +1078,7 @@ export const createEmrRecord = async (req, res) => {
     // Update appointment status to Completed if appointment ID provided
     if (req.body.appointment) {
       await Appointment.findByIdAndUpdate(req.body.appointment, { status: 'Completed', consultationEndTime: new Date() });
+      await createInvoiceForCompletedAppointment(req.body.appointment);
     }
 
     // Auto create follow-up reminder if followUpDate is specified
@@ -817,6 +1101,63 @@ export const createEmrRecord = async (req, res) => {
     res.status(201).json({ success: true, emr, data: emr });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updateEmrRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await EMR.findById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'EMR consultation record not found.' });
+    }
+
+    const patientId = req.body.patient || req.body.patientId || existing.patient;
+    let doctorId = req.body.doctor || req.body.doctorId || existing.doctor || req.user?._id;
+    let doctorName = req.body.doctorName || existing.doctorName;
+
+    const updateData = {
+      ...req.body,
+      patient: patientId,
+      ...(doctorId ? { doctor: doctorId } : {}),
+      doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)'
+    };
+
+    const updatedEmr = await EMR.findByIdAndUpdate(id, updateData, { new: true }).populate('patient');
+
+    // If follow-up date changed or provided, update or create follow-up
+    if (req.body.followUpDate) {
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        await FollowUp.findOneAndUpdate(
+          { appointment: req.body.appointment || existing.appointment, patient: patientId },
+          {
+            patient: patient._id,
+            patientName: patient.name,
+            patientPhone: patient.phone,
+            doctor: doctorId,
+            doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)',
+            followUpDate: req.body.followUpDate,
+            purpose: 'Updated Consultation Follow-up'
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
+    res.json({ success: true, emr: updatedEmr, data: updatedEmr });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteEmrRecord = async (req, res) => {
+  try {
+    const deleted = await EMR.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'EMR record not found' });
+    res.json({ success: true, message: 'EMR consultation record deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -857,17 +1198,186 @@ export const createPrescription = async (req, res) => {
 
     const count = await Prescription.countDocuments();
     const prescriptionNo = `RX-${Date.now().toString().slice(-4)}${count + 1}`;
+
+    const medicines = req.body.medicines || [];
+    const therapies = req.body.therapies || [];
+    const services = req.body.services || [];
+
     const prescription = await Prescription.create({
       ...req.body,
       patient: patientId,
       patientName,
       ...(doctorId ? { doctor: doctorId } : {}),
       doctorName: doctorName || 'Dr. Arya Warrier (BAMS, MD)',
-      prescriptionNo
+      prescriptionNo,
+      medicines,
+      therapies,
+      services
     });
     res.status(201).json({ success: true, prescription, data: prescription });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updatePrescription = async (req, res) => {
+  try {
+    const patientId = req.body.patient || req.body.patientId;
+    let patientName = req.body.patientName;
+    if (patientId && !patientName) {
+      const p = await Patient.findById(patientId);
+      if (p) patientName = p.name;
+    }
+
+    const updated = await Prescription.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.body,
+        ...(patientName ? { patientName } : {}),
+        medicines: req.body.medicines || [],
+        therapies: req.body.therapies || [],
+        services: req.body.services || []
+      },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: 'Prescription not found' });
+    res.json({ success: true, prescription: updated, data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deletePrescription = async (req, res) => {
+  try {
+    const deleted = await Prescription.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Prescription not found' });
+    res.json({ success: true, message: 'Prescription deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const dispensePrescription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prescription = await Prescription.findById(id).populate('patient');
+    if (!prescription) {
+      return res.status(404).json({ success: false, message: 'Prescription not found' });
+    }
+    if (prescription.dispensed) {
+      return res.status(400).json({ success: false, message: 'This prescription has already been dispensed and billed.' });
+    }
+
+    let patientId = prescription.patient?._id || prescription.patient;
+    let patientName = prescription.patientName || prescription.patient?.name || 'Patient';
+
+    if (!patientId && prescription.patientName) {
+      const p = await Patient.findOne({ name: prescription.patientName });
+      if (p) patientId = p._id;
+    }
+
+    const inventoryUpdates = [];
+    const billedItems = [];
+
+    // Process prescribed medicines against pharmacy inventory
+    for (const med of (prescription.medicines || [])) {
+      const medName = (med.name || '').trim();
+      if (!medName) continue;
+
+      const qty = Number(med.quantity) || 1;
+      let unitPrice = 160; // standard Ayurvedic classical medicine default rate
+      let matchedItem = null;
+
+      try {
+        const escapedName = medName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        matchedItem = await PharmacyInventory.findOne({
+          $or: [
+            { name: { $regex: new RegExp(`^${escapedName}$`, 'i') } },
+            { name: { $regex: new RegExp(medName.split(' ')[0], 'i') } }
+          ]
+        });
+      } catch (_) {}
+
+      if (matchedItem) {
+        matchedItem.quantity = Math.max(0, (matchedItem.quantity || 0) - qty);
+        await matchedItem.save();
+        if (matchedItem.sellingPrice) unitPrice = matchedItem.sellingPrice;
+        inventoryUpdates.push({
+          name: matchedItem.name,
+          remainingStock: matchedItem.quantity,
+          deducted: qty
+        });
+      }
+
+      billedItems.push({
+        description: `Ayurvedic Medicine: ${medName}${med.dosage ? ` (${med.dosage})` : ''}`,
+        category: 'Pharmacy',
+        qty,
+        unitPrice,
+        amount: unitPrice * qty
+      });
+    }
+
+    // Attach medicines to patient's daily invoice
+    let updatedInvoice = null;
+    if (billedItems.length > 0 && patientId) {
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      let invoice = await Billing.findOne({
+        patient: patientId,
+        date: { $gte: startOfDay, $lte: endOfDay }
+      });
+
+      if (invoice) {
+        billedItems.forEach(item => {
+          invoice.items.push(item);
+        });
+        invoice.totalAmount = (invoice.items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        invoice.netAmount = Math.max(0, invoice.totalAmount - (invoice.discount || 0) + (invoice.tax || 0));
+        invoice.pendingAmount = Math.max(0, invoice.netAmount - (invoice.paidAmount || 0));
+        invoice.status = invoice.pendingAmount <= 0 ? 'Paid' : (invoice.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+        await invoice.save();
+        updatedInvoice = invoice;
+      } else {
+        const count = await Billing.countDocuments();
+        const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
+        const totalAmount = billedItems.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        updatedInvoice = await Billing.create({
+          invoiceNo,
+          patient: patientId,
+          patientName,
+          items: billedItems,
+          totalAmount,
+          discount: 0,
+          tax: 0,
+          netAmount: totalAmount,
+          paidAmount: 0,
+          pendingAmount: totalAmount,
+          status: 'Pending',
+          paymentMode: 'Cash',
+          date: today
+        });
+      }
+    }
+
+    prescription.dispensed = true;
+    prescription.dispensedAt = new Date();
+    prescription.dispensedBy = req.user?.name || 'Pharmacy Counter';
+    await prescription.save();
+
+    res.json({
+      success: true,
+      message: `Prescription dispensed successfully! Deducted stock for ${inventoryUpdates.length} items and added ${billedItems.length} line items to patient's daily bill.`,
+      prescription,
+      inventoryUpdates,
+      invoice: updatedInvoice
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -898,6 +1408,16 @@ export const updateLabTest = async (req, res) => {
     res.json({ success: true, labTest });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteLabTest = async (req, res) => {
+  try {
+    const deleted = await Laboratory.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Lab test not found' });
+    res.json({ success: true, message: 'Lab test deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -941,10 +1461,76 @@ export const updatePharmacyItem = async (req, res) => {
   }
 };
 
+export const deletePharmacyItem = async (req, res) => {
+  try {
+    const deleted = await PharmacyInventory.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Pharmacy item not found' });
+    res.json({ success: true, message: 'Pharmacy item deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // 8. Billing & Invoicing
 export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Billing.find().sort({ createdAt: -1 });
+    // 1. Auto-generate or append invoices for completed appointments
+    const completedAppts = await Appointment.find({ status: 'Completed' });
+    for (const appt of completedAppts) {
+      await createInvoiceForCompletedAppointment(appt._id);
+    }
+
+    // 2. Consolidate any duplicate invoices for the same patient on the same calendar date into a single invoice!
+    const allInvoices = await Billing.find().populate('patient').sort({ date: 1, createdAt: 1 });
+    const seenByPatientAndDate = new Map();
+
+    for (const inv of allInvoices) {
+      const patId = (inv.patient?._id || inv.patient || '').toString();
+      if (!patId) continue;
+      const invDate = new Date(inv.date || inv.createdAt);
+      const dateKey = `${patId}_${invDate.getFullYear()}-${String(invDate.getMonth() + 1).padStart(2, '0')}-${String(invDate.getDate()).padStart(2, '0')}`;
+
+      if (!seenByPatientAndDate.has(dateKey)) {
+        seenByPatientAndDate.set(dateKey, inv);
+      } else {
+        // Merge into the primary invoice
+        const primary = seenByPatientAndDate.get(dateKey);
+
+        (inv.items || []).forEach(newItem => {
+          const exists = primary.items.some(pi => pi.description === newItem.description && pi.amount === newItem.amount);
+          if (!exists) {
+            primary.items.push(newItem);
+          }
+        });
+
+        if (!primary.appointments) primary.appointments = [];
+        if (primary.appointment && !primary.appointments.some(a => a.toString() === primary.appointment.toString())) {
+          primary.appointments.push(primary.appointment);
+        }
+        if (inv.appointment && !primary.appointments.some(a => a.toString() === inv.appointment.toString())) {
+          primary.appointments.push(inv.appointment);
+        }
+        if (inv.appointments) {
+          inv.appointments.forEach(a => {
+            if (!primary.appointments.some(pa => pa.toString() === a.toString())) {
+              primary.appointments.push(a);
+            }
+          });
+        }
+
+        primary.paidAmount = (primary.paidAmount || 0) + (inv.paidAmount || 0);
+        primary.discount = (primary.discount || 0) + (inv.discount || 0);
+        primary.totalAmount = primary.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        primary.netAmount = Math.max(0, primary.totalAmount - primary.discount + (primary.tax || 0));
+        primary.pendingAmount = Math.max(0, primary.netAmount - primary.paidAmount);
+        primary.status = primary.pendingAmount <= 0 ? 'Paid' : (primary.paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+        await primary.save();
+        await Billing.findByIdAndDelete(inv._id);
+      }
+    }
+
+    const invoices = await Billing.find().populate('patient').sort({ date: -1, createdAt: -1 });
     res.json({ success: true, invoices, data: invoices });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -964,9 +1550,12 @@ export const createInvoice = async (req, res) => {
       if (p) patientName = p.name;
     }
 
-    const count = await Billing.countDocuments();
-    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
-    
+    const targetDate = req.body.date ? new Date(req.body.date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     let totalAmount = 0;
     const items = (req.body.items || []).map(item => {
       const amount = (item.qty || 1) * (item.unitPrice || 0);
@@ -976,10 +1565,40 @@ export const createInvoice = async (req, res) => {
 
     const discount = req.body.discount || 0;
     const tax = req.body.tax || 0;
-    const netAmount = totalAmount - discount + tax;
+    const netAmount = Math.max(0, totalAmount - discount + tax);
     const paidAmount = req.body.paidAmount !== undefined ? req.body.paidAmount : netAmount;
     const pendingAmount = Math.max(0, netAmount - paidAmount);
     const status = pendingAmount <= 0 ? 'Paid' : (paidAmount > 0 ? 'Partially Paid' : 'Pending');
+
+    // Check if a single daily invoice already exists for this patient on this date
+    let existingDailyInvoice = await Billing.findOne({
+      patient: patientId,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (existingDailyInvoice) {
+      existingDailyInvoice.items = items;
+      existingDailyInvoice.totalAmount = totalAmount;
+      existingDailyInvoice.discount = discount;
+      existingDailyInvoice.tax = tax;
+      existingDailyInvoice.netAmount = netAmount;
+      existingDailyInvoice.paidAmount = paidAmount;
+      existingDailyInvoice.pendingAmount = pendingAmount;
+      existingDailyInvoice.status = status;
+      if (req.body.paymentMode) existingDailyInvoice.paymentMode = req.body.paymentMode;
+      if (patientName) existingDailyInvoice.patientName = patientName;
+      await existingDailyInvoice.save();
+
+      return res.status(200).json({ 
+        success: true, 
+        invoice: existingDailyInvoice, 
+        data: existingDailyInvoice, 
+        message: 'Updated single daily invoice for this patient' 
+      });
+    }
+
+    const count = await Billing.countDocuments();
+    const invoiceNo = `INV-${Date.now().toString().slice(-4)}${count + 1}`;
 
     const invoice = await Billing.create({
       ...req.body,
@@ -988,15 +1607,28 @@ export const createInvoice = async (req, res) => {
       invoiceNo,
       items,
       totalAmount,
+      discount,
+      tax,
       netAmount,
       paidAmount,
       pendingAmount,
-      status
+      status,
+      date: targetDate
     });
 
     res.status(201).json({ success: true, invoice, data: invoice });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteInvoice = async (req, res) => {
+  try {
+    const deleted = await Billing.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Invoice not found' });
+    res.json({ success: true, message: 'Invoice deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1025,6 +1657,16 @@ export const updateDoctorSchedule = async (req, res) => {
     res.json({ success: true, doctor: doc, data: doc });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteDoctorSchedule = async (req, res) => {
+  try {
+    const deleted = await DoctorSchedule.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Doctor schedule not found' });
+    res.json({ success: true, message: 'Doctor schedule deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -1161,4 +1803,79 @@ export const deletePanchakarmaBooking = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// --- CLINIC SERVICES CONTROLLERS ---
+
+export const getClinicServices = async (req, res) => {
+  try {
+    const serviceCount = await ClinicService.countDocuments();
+    if (serviceCount === 0) {
+      await seedPolyclinicData();
+    }
+    const services = await ClinicService.find().sort({ category: 1, name: 1 });
+    res.json({ success: true, services, data: services });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const createClinicService = async (req, res) => {
+  try {
+    const { name, category, price, duration, description, status } = req.body;
+    if (!name || !category || price === undefined || !duration) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, category, price, and duration are required fields.'
+      });
+    }
+
+    const service = await ClinicService.create({
+      name: name.trim(),
+      category: category.trim(),
+      price: Number(price),
+      duration: duration.trim(),
+      description: description ? description.trim() : '',
+      status: status || 'Active'
+    });
+
+    res.status(201).json({ success: true, service, data: service });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const updateClinicService = async (req, res) => {
+  try {
+    const { name, category, price, duration, description, status } = req.body;
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (category) updateData.category = category.trim();
+    if (price !== undefined) updateData.price = Number(price);
+    if (duration) updateData.duration = duration.trim();
+    if (description !== undefined) updateData.description = description.trim();
+    if (status) updateData.status = status;
+
+    const service = await ClinicService.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Service not found' });
+    }
+
+    res.json({ success: true, service, data: service });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteClinicService = async (req, res) => {
+  try {
+    const service = await ClinicService.findByIdAndDelete(req.params.id);
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Service not found' });
+    }
+    res.json({ success: true, message: 'Service deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 

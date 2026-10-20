@@ -31,6 +31,8 @@ export default function BillingPage() {
     onConfirm: () => {}
   });
 
+  const [services, setServices] = useState([]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -38,11 +40,14 @@ export default function BillingPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const patRes = await polyclinicService.getPatients();
-      if (patRes.success) setPatients(patRes.patients);
-
-      const invRes = await polyclinicService.getInvoices();
-      if (invRes.success) setInvoices(invRes.invoices);
+      const [patRes, invRes, servRes] = await Promise.all([
+        polyclinicService.getPatients(),
+        polyclinicService.getInvoices(),
+        polyclinicService.getServices()
+      ]);
+      if (patRes.success) setPatients(patRes.patients || []);
+      if (invRes.success) setInvoices(invRes.invoices || []);
+      if (servRes.success) setServices(servRes.services || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -66,12 +71,15 @@ export default function BillingPage() {
         const fetchedItems = [];
         const { appointments, labTests, prescriptions, panchakarma } = res.history;
 
-        // 1. Doctor Consultations
+        // 1. Doctor Consultations & Ayurvedic Services
         if (appointments && appointments.length > 0) {
           appointments.forEach(appt => {
+            const desc = appt.serviceName 
+              ? `Ayurvedic Service: ${appt.serviceName}${appt.serviceDuration ? ` (${appt.serviceDuration})` : ''} - Vaidya: ${appt.doctorName || 'Doctor'}`
+              : `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`;
             fetchedItems.push({
-              description: `Vaidya Consultation - ${appt.doctorName || 'General Consultation'} (${new Date(appt.date).toLocaleDateString()})`,
-              category: 'Consultation',
+              description: desc,
+              category: appt.serviceCategory || 'Consultation',
               qty: 1,
               unitPrice: appt.consultationFee || 500,
               amount: appt.consultationFee || 500
@@ -371,6 +379,31 @@ export default function BillingPage() {
                     <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-6 gap-2 items-center text-xs">
                       <div className="sm:col-span-2">
                         <label className="block sm:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Item Description</label>
+                        {services.length > 0 && (
+                          <select
+                            onChange={(e) => {
+                              const s = services.find(x => x._id === e.target.value);
+                              if (s) {
+                                updateItem(idx, 'description', s.name);
+                                let cat = 'Consultation';
+                                const sc = (s.category || '').toLowerCase();
+                                if (sc.includes('therapy') || sc.includes('panchakarma')) cat = 'Panchakarma / Therapy';
+                                else if (sc.includes('pharmacy') || sc.includes('aushadh') || sc.includes('medicine')) cat = 'Aushadhi / Pharmacy';
+                                else if (sc.includes('lab') || sc.includes('diagnostic')) cat = 'Laboratory';
+                                updateItem(idx, 'category', cat);
+                                updateItem(idx, 'unitPrice', s.price);
+                              }
+                            }}
+                            className="w-full mb-1 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-lg px-2 py-1 text-[11px] text-emerald-900 dark:text-emerald-300 font-semibold"
+                          >
+                            <option value="">-- Quick Select Service (with Fee) --</option>
+                            {services.map(s => (
+                              <option key={s._id} value={s._id}>
+                                {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         <input
                           type="text"
                           placeholder="Description (e.g. Doctor Consultation)"
@@ -378,7 +411,15 @@ export default function BillingPage() {
                           onChange={(e) => updateItem(idx, 'description', e.target.value)}
                           required
                           className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white text-xs font-semibold"
+                          list={`billing-service-datalist-${idx}`}
                         />
+                        <datalist id={`billing-service-datalist-${idx}`}>
+                          {services.map(s => (
+                            <option key={s._id} value={s.name} label={`₹${s.price} (${s.category})`}>
+                              {s.name} — ₹{s.price} ({s.category})
+                            </option>
+                          ))}
+                        </datalist>
                       </div>
                       <div>
                         <label className="block sm:hidden text-[10px] text-slate-400 font-semibold mb-0.5">Category</label>

@@ -31,7 +31,9 @@ export const ALL_SYSTEM_MODULES = [
 
   // --- PATIENT CRM & BOOKING ---
   { label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Patient CRM & Booking', desc: 'Patient lead enquiry registration & appointment conversion' },
+  { label: 'Family', path: '/family-patients', category: 'Patient CRM & Booking', desc: 'Patients grouped by shared family phone number' },
   { label: 'Appointments', path: '/appointments', category: 'Patient CRM & Booking', desc: 'Doctor slot booking & appointment management' },
+  { label: 'Services', path: '/services', category: 'Patient CRM & Booking', desc: 'Ayurvedic treatments, consultation fees & therapy durations' },
   { label: 'Patient Follow-ups', path: '/patient-followups', category: 'Patient CRM & Booking', desc: 'Post-consultation follow-up reminders & care plans' },
 
   // --- CLINICAL EMR & LAB ---
@@ -41,6 +43,7 @@ export const ALL_SYSTEM_MODULES = [
 
   // --- PHARMACY & BILLING ---
   { label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Pharmacy & Billing', desc: 'Medicine stock, clinic consumables, batch & low stock alerts' },
+  { label: 'Invoices', path: '/invoices', category: 'Pharmacy & Billing', desc: 'Separated consultation, therapy, inventory & lab invoices' },
   { label: 'Billing & Invoices', path: '/billing', category: 'Pharmacy & Billing', desc: 'Consolidated patient healthcare billing & receipts' },
   { label: 'Clinic Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing', desc: 'Expense management, salary & cash book overview' },
   { label: 'Payslips', path: '/payslips', category: 'Pharmacy & Billing', desc: 'Employee payslip generation & disbursal records' },
@@ -63,7 +66,7 @@ export const ALL_SYSTEM_MODULES = [
 const ROLE_PRESETS = {
   'Full Access Admin': ALL_SYSTEM_MODULES.map(m => m.label),
   'Doctor / Physician': ['Polyclinic Dashboard', 'Appointments', 'Doctor EMR Consultation', 'Digital Prescriptions', 'Laboratory & Diagnostics', 'Patient Follow-ups', 'Personal Payslip', 'Notifications'],
-  'Receptionist': ['Polyclinic Dashboard', 'Reception Queue', 'Patient Enquiry CRM', 'Appointments', 'Billing & Invoices', 'Patient Follow-ups', 'Personal Payslip', 'Notifications'],
+  'Receptionist': ['Polyclinic Dashboard', 'Reception Queue', 'Patient Enquiry CRM', 'Family', 'Appointments', 'Billing & Invoices', 'Patient Follow-ups', 'Personal Payslip', 'Notifications'],
   'Pharmacist': ['Polyclinic Dashboard', 'Pharmacy Inventory', 'Billing & Invoices', 'Digital Prescriptions', 'Personal Payslip', 'Notifications'],
   'Lab Technician': ['Polyclinic Dashboard', 'Laboratory & Diagnostics', 'Personal Payslip', 'Notifications'],
   'Accountant': ['Polyclinic Dashboard', 'Clinic Accounts & Expenses', 'Billing & Invoices', 'Payslips', 'Personal Payslip', 'Notifications'],

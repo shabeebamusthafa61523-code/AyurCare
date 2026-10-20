@@ -66,67 +66,47 @@ import {
   BookCheck,
   Stethoscope,
   Activity,
+  HeartPulse,
   X
 } from 'lucide-react';
 
-const CATEGORY_ORDER = [
-  'Overview',
-  'Patients & Appointments',
-  'Consultations & EMR',
-  'Panchakarma Therapies',
-  'Pharmacy & Billing',
-  'Staff & Doctors',
-  'Reports & Tasks'
-];
-
-const CATEGORY_CONFIG = {
-  'Overview': { label: 'Overview', icon: LayoutDashboard },
-  'Patients & Appointments': { label: 'Patients & Appointments', icon: PhoneCall },
-  'Consultations & EMR': { label: 'Consultations & EMR', icon: Stethoscope },
-  'Panchakarma Therapies': { label: 'Panchakarma Therapies', icon: Sparkles },
-  'Pharmacy & Billing': { label: 'Pharmacy & Billing', icon: Wallet },
-  'Staff & Doctors': { label: 'Staff & Doctors', icon: Users },
-  'Reports & Tasks': { label: 'Reports & Tasks', icon: BarChart3 }
-};
 
 const menuItems = [
-  // --- OVERVIEW ---
+  // 1. Overview & Front-Desk Reception
   { icon: LayoutDashboard, label: 'Dashboard', path: '/polyclinic-dashboard', category: 'Overview' },
-  { icon: UserCheck, label: 'Tokens & Queue', path: '/reception-queue', category: 'Overview' },
-  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview' },
-  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview' },
+  { icon: UserCheck, label: 'Tokens & Queue', path: '/reception-queue', category: 'Reception' },
+  { icon: PhoneCall, label: 'Patients', path: '/patient-enquiries', category: 'Patients' },
+  { icon: UsersRound, label: 'Family', path: '/family-patients', category: 'Patients' },
+  { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Appointments' },
+  { icon: HeartPulse, label: 'Services', path: '/services', category: 'Services' },
 
-  // --- PATIENTS & APPOINTMENTS ---
-  { icon: PhoneCall, label: 'Patients', path: '/patient-enquiries', category: 'Patients & Appointments' },
-  { icon: Calendar, label: 'Appointments', path: '/appointments', category: 'Patients & Appointments' },
-  { icon: Clock, label: 'Follow-ups', path: '/patient-followups', category: 'Patients & Appointments' },
+  // 2. Clinical Care, EMR & Therapies
+  { icon: Stethoscope, label: 'Doctor Consultations', path: '/doctor-emr', category: 'Clinical Care' },
+  { icon: FileText, label: 'Prescriptions', path: '/prescriptions', category: 'Clinical Care' },
+  { icon: Sparkles, label: 'Therapy Sessions', path: '/panchakarma', category: 'Panchakarma' },
+  { icon: Activity, label: 'Lab Reports', path: '/laboratory', category: 'Diagnostics' },
 
-  // --- CONSULTATIONS & EMR ---
-  { icon: Stethoscope, label: 'Doctor Consultations', path: '/doctor-emr', category: 'Consultations & EMR' },
-  { icon: FileText, label: 'Prescriptions', path: '/prescriptions', category: 'Consultations & EMR' },
-  { icon: Activity, label: 'Lab Reports', path: '/laboratory', category: 'Consultations & EMR' },
+  // 3. Dispensary, Billing & Follow-up
+  { icon: Tag, label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Dispensary' },
+  { icon: Receipt, label: 'Invoices', path: '/invoices', category: 'Billing' },
+  { icon: Clock, label: 'Follow-ups', path: '/patient-followups', category: 'Follow-ups' },
 
-  // --- PANCHAKARMA THERAPIES ---
-  { icon: Sparkles, label: 'Therapy Sessions', path: '/panchakarma', category: 'Panchakarma Therapies' },
+  // 4. Staff & Clinic Operations
+  { icon: UserCog, label: 'Doctors & Therapists', path: '/doctors-staff', category: 'Staff' },
+  { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'Staff' },
+  { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'HR' },
+  { icon: CreditCard, label: 'Staff Payslips', path: '/payslips', category: 'Payroll' },
+  { icon: FileText, label: 'My Payslip', path: '/my-payslip', category: 'Payroll' },
+  { icon: Wallet, label: 'Accounts & Expenses', path: '/accounts', category: 'Finance' },
+  { icon: Building, label: 'Departments', path: '/departments', category: 'Administration' },
+  { icon: Users, label: 'Users & Roles', path: '/users', category: 'Administration' },
+  { icon: ShieldCheck, label: 'Role Permissions', path: '/permissions', category: 'Administration' },
 
-  // --- PHARMACY & BILLING ---
-  { icon: Tag, label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Pharmacy & Billing' },
-  { icon: Receipt, label: 'Billing & Invoices', path: '/billing', category: 'Pharmacy & Billing' },
-  { icon: Wallet, label: 'Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing' },
-  { icon: CreditCard, label: 'Staff Payslips', path: '/payslips', category: 'Pharmacy & Billing' },
-  { icon: FileText, label: 'My Payslip', path: '/my-payslip', category: 'Pharmacy & Billing' },
-
-  // --- STAFF & DOCTORS ---
-  { icon: UserCog, label: 'Doctors & Therapists', path: '/doctors-staff', category: 'Staff & Doctors' },
-  { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'Staff & Doctors' },
-  { icon: Users, label: 'Users & Roles', path: '/users', category: 'Staff & Doctors' },
-  { icon: Building, label: 'Departments', path: '/departments', category: 'Staff & Doctors' },
-  { icon: ShieldCheck, label: 'Role Permissions', path: '/permissions', category: 'Staff & Doctors' },
-
-  // --- REPORTS & TASKS ---
-  { icon: BarChart3, label: 'Hospital Reports', path: '/polyclinic-reports', category: 'Reports & Tasks' },
-  { icon: Sparkles, label: 'AI Health Insights', path: '/ai-report', category: 'Reports & Tasks' },
-  { icon: ListCheck, label: 'Tasks', path: '/todo', category: 'Reports & Tasks' }
+  // 5. Reports, Tasks & Communications
+  { icon: BarChart3, label: 'Hospital Reports', path: '/polyclinic-reports', category: 'Analytics' },
+  { icon: Sparkles, label: 'AI Health Insights', path: '/ai-report', category: 'Analytics' },
+  { icon: ListCheck, label: 'Tasks', path: '/todo', category: 'Productivity' },
+  { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Communications' }
 ];
 
 // Simple Portal implementation to render the badge safely outside of parent overflow cropping
@@ -134,169 +114,6 @@ const PortalTooltip = ({ children }) => {
   return ReactDOM.createPortal(children, document.body);
 };
 
-const CategoryDropdownGroup = ({ group, isCollapsed, activePath, onMobileClick }) => {
-  const isSingleItem = group.items.length === 1;
-
-  const isAnyChildActive = group.items.some(item => 
-    activePath === item.path || (item.children && item.children.some(c => activePath === c.path))
-  );
-
-  const [isOpen, setIsOpen] = useState(isAnyChildActive);
-  const [isHovered, setIsHovered] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const categoryRef = useRef(null);
-
-  useEffect(() => {
-    if (isAnyChildActive) {
-      setIsOpen(true);
-    }
-  }, [isAnyChildActive]);
-
-  // When sidebar is collapsed / closed: Show ONLY the main category icon!
-  if (isCollapsed) {
-    const catMeta = CATEGORY_CONFIG[group.name] || { label: group.name, icon: Layers };
-    const mainItem = group.items[0];
-    const CategoryIcon = isSingleItem ? mainItem.icon : catMeta.icon;
-    const activeItem = group.items.find(i => activePath === i.path || (i.children && i.children.some(c => activePath === c.path)));
-    const targetPath = isSingleItem ? mainItem.path : (activeItem ? activeItem.path : group.items[0].path);
-    const tooltipLabel = isSingleItem ? mainItem.label : group.name;
-
-    const handleMouseEnter = () => {
-      if (categoryRef.current) {
-        const rect = categoryRef.current.getBoundingClientRect();
-        setCoords({
-          top: rect.top + rect.height / 2,
-          left: rect.right + 12,
-        });
-      }
-      setIsHovered(true);
-    };
-
-    return (
-      <div 
-        ref={categoryRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setIsHovered(false)}
-        className="w-full flex justify-center my-1.5 relative"
-      >
-        <Link
-          to={targetPath}
-          onClick={onMobileClick}
-          className={`flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200 cursor-pointer ${
-            isAnyChildActive
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 font-bold scale-105'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
-          }`}
-        >
-          <CategoryIcon size={20} />
-        </Link>
-
-        {/* Floating Tooltip Badge on Hover */}
-        <AnimatePresence>
-          {isHovered && (
-            <PortalTooltip>
-              <motion.div 
-                initial={{ opacity: 0, x: -10, y: '-50%' }}
-                animate={{ opacity: 1, x: 0, y: '-50%' }}
-                exit={{ opacity: 0, x: -10, y: '-50%' }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                style={{
-                  position: 'fixed',
-                  top: `${coords.top}px`,
-                  left: `${coords.left}px`,
-                }}
-                className="fixed pointer-events-none z-[9999] px-3 py-1.5 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold rounded-xl shadow-xl border border-slate-700/50 whitespace-nowrap -translate-y-1/2 flex items-center gap-2"
-              >
-                <span>{tooltipLabel}</span>
-                {!isSingleItem && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-slate-700 dark:bg-slate-700 text-indigo-300 font-bold">
-                    {group.items.length} items
-                  </span>
-                )}
-                <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-1.5 h-1.5 bg-slate-900 dark:bg-slate-800 rotate-45" />
-              </motion.div>
-            </PortalTooltip>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
-  // Single item in expanded category -> No head, render directly as item
-  if (isSingleItem) {
-    const item = group.items[0];
-    return (
-      <NavItem 
-        key={`${item.path}-${item.label}`}
-        icon={<item.icon size={20} />} 
-        label={item.label} 
-        to={item.path} 
-        active={activePath === item.path || (item.children && item.children.some(c => activePath === c.path))} 
-        isCollapsed={isCollapsed}
-        childrenItems={item.children}
-        onClick={onMobileClick}
-      />
-    );
-  }
-
-  const catMeta = CATEGORY_CONFIG[group.name] || { label: group.name, icon: Layers };
-  const CategoryIcon = catMeta.icon;
-
-  return (
-    <div className="w-full space-y-1 select-none my-1">
-      {/* Category Dropdown Toggle Header */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
-          isAnyChildActive
-            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
-            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-semibold'
-        }`}
-        title={isOpen ? `Collapse ${group.name}` : `Expand ${group.name}`}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <CategoryIcon size={18} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-xs font-bold uppercase tracking-wide truncate">
-            {group.name}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-            {group.items.length}
-          </span>
-          <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-        </div>
-      </button>
-
-      {/* Sub-items List inside Dropdown */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="pl-2 space-y-1 border-l-2 border-slate-200 dark:border-slate-800 ml-3.5 mt-1"
-          >
-            {group.items.map((item) => (
-              <NavItem 
-                key={`${item.path}-${item.label}`}
-                icon={<item.icon size={18} />} 
-                label={item.label} 
-                to={item.path} 
-                active={activePath === item.path || (item.children && item.children.some(c => activePath === c.path))} 
-                isCollapsed={isCollapsed}
-                childrenItems={item.children}
-                onClick={onMobileClick}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
   const location = useLocation();
@@ -533,7 +350,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         // Remove existing copy if present
         finalVisible = finalVisible.filter(item => item.path !== primaryDash.path && item.label !== primaryDash.label);
         // Unshift primary dashboard at the top under Overview category
-        finalVisible.unshift({ ...primaryDash, category: 'Overview' });
+        finalVisible.unshift(primaryDash);
       }
 
       return finalVisible;
@@ -544,23 +361,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
   };
 
   const visibleMenuItems = getVisibleMenuItems();
-
-  // Group visible items by Category
-  const groupMenuItemsByCategory = (items) => {
-    const groups = {};
-    items.forEach(item => {
-      const cat = item.category || 'Overview';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
-    });
-
-    return CATEGORY_ORDER.filter(cat => groups[cat] && groups[cat].length > 0).map(cat => ({
-      name: cat,
-      items: groups[cat]
-    }));
-  };
-
-  const groupedMenuItems = groupMenuItemsByCategory(visibleMenuItems);
 
   return (
     <>
@@ -597,14 +397,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           </button>
         </div>
 
-        {/* Menu Items (Grouped as Category Accordion Dropdowns) */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {groupedMenuItems.map((group) => (
-            <CategoryDropdownGroup
-              key={group.name}
-              group={group}
+        {/* Menu Items (Direct List without Headings) */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {visibleMenuItems.map((item) => (
+            <NavItem 
+              key={`${item.path}-${item.label}`}
+              icon={<item.icon size={20} />} 
+              label={item.label} 
+              to={item.path} 
+              active={activePath === item.path || (item.children && item.children.some(c => activePath === c.path))} 
               isCollapsed={isCollapsed}
-              activePath={activePath}
+              childrenItems={item.children}
             />
           ))}
         </div>
@@ -656,14 +459,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-          {groupedMenuItems.map((group) => (
-            <CategoryDropdownGroup
-              key={group.name}
-              group={group}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+          {visibleMenuItems.map((item) => (
+            <NavItem
+              key={`${item.path}-${item.label}`}
+              icon={<item.icon size={20} />}
+              label={item.label}
+              to={item.path}
+              active={activePath === item.path || (item.children && item.children.some(c => activePath === c.path))}
               isCollapsed={false}
-              activePath={activePath}
-              onMobileClick={() => setIsMobileOpen(false)}
+              childrenItems={item.children}
+              onClick={() => setIsMobileOpen(false)}
             />
           ))}
         </div>

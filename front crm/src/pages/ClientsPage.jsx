@@ -19,9 +19,9 @@ const ClientsPage = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
 
-  // View Mode initialized from localStorage (default: 'grid')
+  // View Mode initialized from localStorage (default: 'table')
   const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('clientViewMode') || 'grid';
+    return localStorage.getItem('clientViewMode') || 'table';
   });
 
   // Filter & Search States

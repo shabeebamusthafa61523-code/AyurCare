@@ -30,6 +30,7 @@ const ALL_SIDEBAR_ITEMS = [
 
   // --- PATIENT CRM & BOOKING ---
   { label: 'Patient Enquiry CRM', path: '/patient-enquiries', category: 'Patient CRM & Booking', desc: 'Patient lead enquiry registration & appointment conversion' },
+  { label: 'Family', path: '/family-patients', category: 'Patient CRM & Booking', desc: 'Patients grouped by shared family phone number' },
   { label: 'Appointments', path: '/appointments', category: 'Patient CRM & Booking', desc: 'Doctor slot booking & appointment management' },
   { label: 'Patient Follow-ups', path: '/patient-followups', category: 'Patient CRM & Booking', desc: 'Post-consultation follow-up reminders & care plans' },
 
@@ -40,6 +41,7 @@ const ALL_SIDEBAR_ITEMS = [
 
   // --- PHARMACY & BILLING ---
   { label: 'Pharmacy Inventory', path: '/pharmacy-inventory', category: 'Pharmacy & Billing', desc: 'Medicine stock, clinic consumables, batch & low stock alerts' },
+  { label: 'Invoices', path: '/invoices', category: 'Pharmacy & Billing', desc: 'Separated consultation, therapy, inventory & lab invoices' },
   { label: 'Billing & Invoices', path: '/billing', category: 'Pharmacy & Billing', desc: 'Consolidated patient healthcare billing & receipts' },
   { label: 'Clinic Accounts & Expenses', path: '/accounts', category: 'Pharmacy & Billing', desc: 'Expense management, salary & cash book overview' },
   { label: 'Payslips', path: '/payslips', category: 'Pharmacy & Billing', desc: 'Employee payslip generation & disbursal records' },
