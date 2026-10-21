@@ -241,7 +241,7 @@ function App() {
         <Route path="/users/:userId" element={<ProtectedRoute><MainLayout><RestrictedRoute><UserDetailPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/sidebar-permissions" element={<ProtectedRoute><MainLayout><RestrictedRoute><PermissionsPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/permissions" element={<ProtectedRoute><MainLayout><RestrictedRoute><PermissionsPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
-        <Route path="/permissions/:userId" element={<ProtectedRoute><MainLayout><RestrictedRoute><UserPermissionsPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
+        <Route path="/permissions/:userId" element={<ProtectedRoute><MainLayout><RestrictedRoute><PermissionsPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/leads" element={<ProtectedRoute><MainLayout><RestrictedRoute><Leads /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/leads-telecaller" element={<ProtectedRoute><MainLayout><RestrictedRoute><LeadsTelecaller /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/client-leads" element={<ProtectedRoute><MainLayout><RestrictedRoute><ClientLeads /></RestrictedRoute></MainLayout></ProtectedRoute>} />
