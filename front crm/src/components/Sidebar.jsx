@@ -115,6 +115,36 @@ const PortalTooltip = ({ children }) => {
 };
 
 
+
+export const SIDEBAR_ALIASES = {
+  '/polyclinic-dashboard': ['dashboard', 'polyclinic dashboard', '/polyclinic-dashboard', '/dashboard', 'admin dashboard'],
+  '/reception-queue': ['tokens & queue', 'reception queue', 'tokens', 'queue', 'waiting queue', '/reception-queue'],
+  '/patient-enquiries': ['patients', 'patient enquiry crm', 'patient enquiries', 'enquiries', 'leads', '/patient-enquiries'],
+  '/family-patients': ['family', 'family patients', 'family directory', '/family-patients'],
+  '/appointments': ['appointments', 'appointment management', 'doctor slot booking', '/appointments'],
+  '/services': ['services', 'services & treatments', 'treatments', '/services'],
+  '/doctor-emr': ['doctor consultations', 'doctor emr consultation', 'doctor emr', 'consultations', 'emr', '/doctor-emr'],
+  '/prescriptions': ['prescriptions', 'digital prescriptions', 'prescription', '/prescriptions'],
+  '/panchakarma': ['therapy sessions', 'panchakarma', 'therapy', 'therapy session', '/panchakarma'],
+  '/laboratory': ['lab reports', 'laboratory & diagnostics', 'lab', 'laboratory', 'diagnostics', '/laboratory'],
+  '/pharmacy-inventory': ['pharmacy inventory', 'pharmacy', 'inventory', 'medicines', '/pharmacy-inventory'],
+  '/invoices': ['invoices', 'billing & invoices', 'billing', 'invoice', '/invoices', '/billing'],
+  '/patient-followups': ['follow-ups', 'patient follow-ups', 'followups', 'care plans', '/patient-followups'],
+  '/doctors-staff': ['doctors & therapists', 'doctors & staff', 'doctors', 'therapists', 'staff', '/doctors-staff'],
+  '/staff-attendance': ['staff attendance', 'attendance', 'daily attendance', '/staff-attendance', '/attendance'],
+  '/leaves': ['leave requests', 'leaves', 'leave application', '/leaves'],
+  '/payslips': ['staff payslips', 'payslips', 'payroll', '/payslips'],
+  '/my-payslip': ['my payslip', 'personal payslip', 'salary slip', '/my-payslip'],
+  '/accounts': ['accounts & expenses', 'clinic accounts & expenses', 'accounts', 'expenses', 'finance', '/accounts'],
+  '/departments': ['departments', 'department', '/departments'],
+  '/users': ['users & roles', 'users', 'roles', 'employee accounts', '/users'],
+  '/permissions': ['role permissions', 'permission configuration', 'permissions', 'sidebar permissions', '/permissions', '/sidebar-permissions'],
+  '/polyclinic-reports': ['hospital reports', 'polyclinic analytics', 'reports', 'analytics', '/polyclinic-reports'],
+  '/ai-report': ['ai health insights', 'ai report', 'ai reports', '/ai-report'],
+  '/todo': ['tasks', 'task assignment', 'todo', 'task assign', '/todo'],
+  '/notifications': ['notifications', 'system alerts', '/notifications']
+};
+
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
   const location = useLocation();
   const activePath = location.pathname;
@@ -126,17 +156,28 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       setPermissionsVersion(v => v + 1);
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('permissionsUpdated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('permissionsUpdated', handleStorageChange);
+    };
   }, []);
 
   const getVisibleMenuItems = () => {
     try {
       let userObj = liveUser;
-      if (!userObj) {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          try { userObj = JSON.parse(savedUser); } catch (e) {}
-        }
+      const savedUserStr = localStorage.getItem('user');
+      if (savedUserStr) {
+        try {
+          const parsed = JSON.parse(savedUserStr);
+          userObj = { ...(parsed || {}), ...(liveUser || {}) };
+          if (Array.isArray(parsed?.permissions)) {
+            userObj.permissions = parsed.permissions;
+          }
+          if (parsed?.isSuperAdmin !== undefined) {
+            userObj.isSuperAdmin = parsed.isSuperAdmin;
+          }
+        } catch (e) {}
       }
 
       if (!userObj) {
@@ -189,17 +230,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             const itemLabelLower = item.label.toLowerCase().trim();
             const itemPathLower = item.path ? item.path.toLowerCase().trim() : '';
 
+            const aliases = (SIDEBAR_ALIASES[itemPathLower] || []).map(a => a.toLowerCase().trim());
             const isParentAllowed = 
               item.path === '/leaves' ||
               allowedSet.includes(itemLabelLower) || 
               allowedSet.includes(itemPathLower) ||
-              extraAllowedPaths.includes(itemPathLower);
+              extraAllowedPaths.includes(itemPathLower) ||
+              aliases.some(alias => allowedSet.includes(alias));
 
             if (item.children) {
               const allowedChildren = item.children.filter(child => {
                 const childLabelLower = child.label.toLowerCase().trim();
                 const childPathLower = child.path ? child.path.toLowerCase().trim() : '';
-                return isParentAllowed || allowedSet.includes(childLabelLower) || allowedSet.includes(childPathLower);
+                const childAliases = (SIDEBAR_ALIASES[childPathLower] || []).map(a => a.toLowerCase().trim());
+                return isParentAllowed || allowedSet.includes(childLabelLower) || allowedSet.includes(childPathLower) || childAliases.some(a => allowedSet.includes(a));
               });
 
               if (allowedChildren.length > 0) {
