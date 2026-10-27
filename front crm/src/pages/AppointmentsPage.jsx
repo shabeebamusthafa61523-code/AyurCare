@@ -580,7 +580,7 @@ export default function AppointmentsPage() {
                   <Calendar className="w-4 h-4 text-emerald-500" /> {editingApptId ? 'Edit Appointment' : 'Book New Appointment'}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {editingApptId ? 'Update date, time slot, doctor or treatment details.' : 'Only 1 active appointment permitted per patient. Completed or cancelled appointments unlock new slots.'}
+                  {editingApptId ? 'Update date, time slot, doctor or treatment details.' : 'Select patient, doctor, and slot to schedule appointments or consultation sessions.'}
                 </p>
               </div>
               <button

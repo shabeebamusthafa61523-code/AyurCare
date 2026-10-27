@@ -780,37 +780,33 @@ export const createAppointment = async (req, res) => {
     const date = req.body.date || req.body.appointmentDate || new Date();
     const timeSlot = req.body.timeSlot || req.body.appointmentTime || '09:30 AM - 10:00 AM';
 
-    // Check if patient already has an active/open appointment (Scheduled, Checked-In, In-Consultation)
-    const activeQuery = [];
-    if (patientId) {
-      activeQuery.push({ patient: patientId });
-    }
-    if (patientPhone) {
-      activeQuery.push({ patientPhone });
-    }
+    // Auto calculate token number for the date
+    const dateStart = new Date(date);
+    dateStart.setHours(0,0,0,0);
+    const dateEnd = new Date(date);
+    dateEnd.setHours(23,59,59,999);
 
-    if (activeQuery.length > 0) {
-      const existingActive = await Appointment.findOne({
-        $or: activeQuery,
+    const isWalkIn = (timeSlot && timeSlot.toLowerCase().includes('walk-in')) || req.body.isWalkIn || req.body.status === 'Checked-In';
+
+    // Only prevent duplicate scheduled bookings for the exact same patient on the same date and specific slot
+    if (!isWalkIn && patientId) {
+      const existingSameSlot = await Appointment.findOne({
+        patient: patientId,
+        date: { $gte: dateStart, $lte: dateEnd },
+        timeSlot,
         status: { $in: ['Scheduled', 'Checked-In', 'In-Consultation'] }
       });
 
-      if (existingActive) {
+      if (existingSameSlot) {
         return res.status(400).json({
           success: false,
-          message: `Patient "${patientName || 'this patient'}" already has an active appointment (${existingActive.appointmentNo} - Status: ${existingActive.status}). A patient cannot book more than one active appointment at a time.`
+          message: `Patient "${patientName || 'this patient'}" already has an appointment booked for this slot (${timeSlot}) on this date.`
         });
       }
     }
 
     const count = await Appointment.countDocuments();
     const appointmentNo = `APT-${Date.now().toString().slice(-4)}${count + 1}`;
-    
-    // Auto calculate token number for the date
-    const dateStart = new Date(date);
-    dateStart.setHours(0,0,0,0);
-    const dateEnd = new Date(date);
-    dateEnd.setHours(23,59,59,999);
     
     const todayCount = await Appointment.countDocuments({ date: { $gte: dateStart, $lte: dateEnd } });
     const tokenNumber = todayCount + 1;
