@@ -562,7 +562,7 @@ export default function PrescriptionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Rx No</th>
                     <th className="py-3 px-4">Patient</th>
                     <th className="py-3 px-4">Doctor</th>
@@ -815,7 +815,7 @@ export default function PrescriptionsPage() {
                 ) : (
                   <div className="space-y-2.5">
                     {prescribedMedicines.map((m, idx) => (
-                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-750 rounded-xl space-y-2 shadow-xs">
+                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2 shadow-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-slate-400">Medicine #{idx + 1}</span>
                           <button
@@ -853,7 +853,7 @@ export default function PrescriptionsPage() {
                               value={m.name}
                               onChange={(e) => updateMedicineRow(idx, 'name', e.target.value)}
                               placeholder="e.g. Maharasnadi Kashayam, Triphala..."
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                               list={`med-datalist-${idx}`}
                             />
                             <datalist id={`med-datalist-${idx}`}>
@@ -871,7 +871,7 @@ export default function PrescriptionsPage() {
                               value={m.dosage}
                               onChange={(e) => updateMedicineRow(idx, 'dosage', e.target.value)}
                               placeholder="e.g. 1 Tab / 15ml"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -879,7 +879,7 @@ export default function PrescriptionsPage() {
                             <select
                               value={m.frequency}
                               onChange={(e) => updateMedicineRow(idx, 'frequency', e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             >
                               {TIMING_OPTIONS.Medicine.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
@@ -893,7 +893,7 @@ export default function PrescriptionsPage() {
                               value={m.duration}
                               onChange={(e) => updateMedicineRow(idx, 'duration', e.target.value)}
                               placeholder="e.g. 7 Days"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                         </div>
@@ -903,7 +903,7 @@ export default function PrescriptionsPage() {
                             value={m.instructions}
                             onChange={(e) => updateMedicineRow(idx, 'instructions', e.target.value)}
                             placeholder="Anupana / Instructions (optional: e.g. With 45ml lukewarm water after food)"
-                            className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
@@ -945,7 +945,7 @@ export default function PrescriptionsPage() {
                 ) : (
                   <div className="space-y-2.5">
                     {prescribedTherapies.map((t, idx) => (
-                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-750 rounded-xl space-y-2 shadow-xs">
+                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2 shadow-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-slate-400">Therapy #{idx + 1}</span>
                           <button
@@ -985,7 +985,7 @@ export default function PrescriptionsPage() {
                               value={t.name}
                               onChange={(e) => updateTherapyRow(idx, 'name', e.target.value)}
                               placeholder="e.g. Shirodhara, Abhyanga, Janu Basti..."
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                               list={`therapy-datalist-${idx}`}
                             />
                             <datalist id={`therapy-datalist-${idx}`}>
@@ -1003,7 +1003,7 @@ export default function PrescriptionsPage() {
                               value={t.sessions}
                               onChange={(e) => updateTherapyRow(idx, 'sessions', e.target.value)}
                               placeholder="e.g. 7 Sessions"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1011,7 +1011,7 @@ export default function PrescriptionsPage() {
                             <select
                               value={t.frequency}
                               onChange={(e) => updateTherapyRow(idx, 'frequency', e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             >
                               {TIMING_OPTIONS.Therapy.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
@@ -1025,7 +1025,7 @@ export default function PrescriptionsPage() {
                               value={t.duration}
                               onChange={(e) => updateTherapyRow(idx, 'duration', e.target.value)}
                               placeholder="e.g. 60 mins"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                         </div>
@@ -1035,7 +1035,7 @@ export default function PrescriptionsPage() {
                             value={t.instructions}
                             onChange={(e) => updateTherapyRow(idx, 'instructions', e.target.value)}
                             placeholder="Therapy notes (optional: e.g. Continuous medicated oil flow, warm water bath after session)"
-                            className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
@@ -1077,7 +1077,7 @@ export default function PrescriptionsPage() {
                 ) : (
                   <div className="space-y-2.5">
                     {prescribedServices.map((s, idx) => (
-                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-750 rounded-xl space-y-2 shadow-xs">
+                      <div key={idx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2 shadow-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-slate-400">Service #{idx + 1}</span>
                           <button
@@ -1117,7 +1117,7 @@ export default function PrescriptionsPage() {
                               value={s.name}
                               onChange={(e) => updateServiceRow(idx, 'name', e.target.value)}
                               placeholder="e.g. Vaidya Consultation, Nadi Pariksha..."
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                               list={`service-datalist-${idx}`}
                             />
                             <datalist id={`service-datalist-${idx}`}>
@@ -1135,7 +1135,7 @@ export default function PrescriptionsPage() {
                               value={s.sessions}
                               onChange={(e) => updateServiceRow(idx, 'sessions', e.target.value)}
                               placeholder="e.g. 1 Session"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1143,7 +1143,7 @@ export default function PrescriptionsPage() {
                             <select
                               value={s.frequency}
                               onChange={(e) => updateServiceRow(idx, 'frequency', e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             >
                               {TIMING_OPTIONS.Service.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
@@ -1157,7 +1157,7 @@ export default function PrescriptionsPage() {
                               value={s.duration}
                               onChange={(e) => updateServiceRow(idx, 'duration', e.target.value)}
                               placeholder="e.g. 30 mins"
-                              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white"
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             />
                           </div>
                         </div>
@@ -1167,7 +1167,7 @@ export default function PrescriptionsPage() {
                             value={s.instructions}
                             onChange={(e) => updateServiceRow(idx, 'instructions', e.target.value)}
                             placeholder="Service notes (optional: e.g. Dietary review, blood pressure check)"
-                            className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
@@ -1195,7 +1195,7 @@ export default function PrescriptionsPage() {
                   <button
                     type="button"
                     onClick={cancelEditRx}
-                    className="py-3 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-850 transition"
+                    className="py-3 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                   >
                     Cancel
                   </button>
@@ -1365,7 +1365,7 @@ export default function PrescriptionsPage() {
                       </div>
                       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 dark:bg-slate-850 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
+                          <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
                             <tr>
                               <th className="py-2 px-3">#</th>
                               <th className="py-2 px-3">Medicine Name</th>
