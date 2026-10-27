@@ -328,7 +328,7 @@ export default function ReceptionQueuePage() {
         }));
       }
     } catch (err) {
-      alert(err.message || 'Error issuing token');
+      alert(err.response?.data?.message || err.message || 'Error issuing token');
     }
   };
 
@@ -370,7 +370,7 @@ export default function ReceptionQueuePage() {
             alert(res.message || 'Failed to delete token');
           }
         } catch (err) {
-          alert(err.message || 'Error deleting token');
+          alert(err.response?.data?.message || err.message || 'Error deleting token');
         }
       }
     });
@@ -501,7 +501,7 @@ export default function ReceptionQueuePage() {
             }
           }
         } catch (err) {
-          alert(err.message);
+          alert(err.response?.data?.message || err.message || 'Error updating status');
         }
       }
     });
