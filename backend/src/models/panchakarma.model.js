@@ -28,6 +28,13 @@ const panchakarmaSchema = new mongoose.Schema({
     enum: ['Male', 'Female', 'Any'],
     default: 'Any'
   },
+  therapies: [{
+    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'ClinicService' },
+    name: { type: String },
+    category: { type: String },
+    price: { type: Number },
+    duration: { type: String }
+  }],
   therapyName: {
     type: String,
     required: true,
