@@ -210,7 +210,6 @@ export default function PatientCardModal({ patient, onClose }) {
     }
 
     const blood = patient.bloodGroup || 'O+';
-    const prakriti = patient.prakriti || 'Vata-Pitta';
     const emergency = patient.emergencyContact?.name 
       ? `${patient.emergencyContact.name} (${patient.emergencyContact.relation || 'Guardian'}) - ${patient.emergencyContact.phone || patient.phone}`
       : `Primary: ${patient.phone || 'Recorded in EMR'}`;
@@ -383,15 +382,6 @@ export default function PatientCardModal({ patient, onClose }) {
               border-radius: 3px;
               font-size: 8.5px;
             }
-            .badge-prakriti {
-              display: inline-block;
-              background: #ecfdf5;
-              color: #065f46;
-              font-weight: 700;
-              padding: 0 4px;
-              border-radius: 3px;
-              font-size: 8.5px;
-            }
             .card-footer {
               background: #f8fafc;
               border-top: 1px dashed #cbd5e1;
@@ -505,8 +495,8 @@ export default function PatientCardModal({ patient, onClose }) {
                       <div class="meta-grid">
                         <div class="meta-item"><span class="lbl">Age/Gender: </span><span class="val">${patient.age || '—'} Y / ${patient.gender || '—'}</span></div>
                         <div class="meta-item"><span class="lbl">Blood Group: </span><span class="val badge-blood">${blood}</span></div>
-                        <div class="meta-item"><span class="lbl">Prakriti: </span><span class="val badge-prakriti">${prakriti}</span></div>
                         <div class="meta-item"><span class="lbl">Phone: </span><span class="val">${patient.phone || '—'}</span></div>
+                        <div class="meta-item"><span class="lbl">Status: </span><span class="val" style="color:#059669;font-weight:700;">Active OPD</span></div>
                       </div>
                     </div>
                   </div>
@@ -722,7 +712,7 @@ export default function PatientCardModal({ patient, onClose }) {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] sm:text-[11px]">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px] sm:text-[11px]">
                           <div className="text-slate-300">
                             <span className="text-slate-400">Age: </span>
                             <span className="font-semibold">{patient.age || '—'} Yrs</span>
@@ -733,11 +723,9 @@ export default function PatientCardModal({ patient, onClose }) {
                               {patient.bloodGroup || 'O+'}
                             </span>
                           </div>
-                          <div className="text-slate-300 col-span-2 flex items-center gap-1.5 truncate">
-                            <span className="text-slate-400">Prakriti:</span>
-                            <span className="font-bold text-emerald-300 bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-500/30 truncate">
-                              🌿 {patient.prakriti || 'Vata-Pitta'}
-                            </span>
+                          <div className="text-slate-300 col-span-2">
+                            <span className="text-slate-400">Contact: </span>
+                            <span className="font-semibold text-slate-200">📞 {patient.phone || '—'}</span>
                           </div>
                         </div>
                       </div>
@@ -848,7 +836,7 @@ export default function PatientCardModal({ patient, onClose }) {
                     <div className="font-bold text-sm truncate">{patient.name}</div>
                     <div className="font-mono text-xs text-emerald-400 font-bold">{patientId}</div>
                     <div className="text-[10px] text-slate-300 mt-0.5">
-                      {patient.age || '—'}Y / {patient.gender || '—'} • {patient.bloodGroup || 'O+'} • {patient.prakriti || 'Vata-Pitta'}
+                      {patient.age || '—'}Y / {patient.gender || '—'} • Blood: {patient.bloodGroup || 'O+'}
                     </div>
                   </div>
                 </div>
