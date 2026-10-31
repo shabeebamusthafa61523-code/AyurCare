@@ -123,6 +123,55 @@ function SvgQrCode({ value = 'AYUR-0000', size = 64, className = '' }) {
   );
 }
 
+// Generates SVG barcode markup string for print HTML
+function generateBarcodeSvgString(value = 'AYUR-0000', color = '#34d399') {
+  const hash = value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const barPattern = [
+    2, 1, 3, 1, 2, 2, 1, 3, 1, 1, 2, 1, 3, 2, 1, 2, 1, 3, 1, 2, 2, 1, 1, 3, 2,
+    1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 2, 3, 1, 2, 1, 2, 3, 1, 2, 1, 1
+  ];
+  let currentX = 10;
+  let rects = '';
+  barPattern.forEach((w, idx) => {
+    const width = ((w + (hash % (idx + 1))) % 3) + 1.2;
+    if (idx % 2 === 0) {
+      rects += `<rect x="${currentX}" y="0" width="${width}" height="26" fill="${color}" />`;
+    }
+    currentX += width + 1.5;
+  });
+  return `<svg viewBox="0 0 ${currentX + 10} 26" style="height:22px; width:auto;" preserveAspectRatio="none">${rects}</svg>`;
+}
+
+// Generates SVG QR code markup string for print HTML
+function generateQrSvgString(size = 30) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="#0f172a">
+    <rect x="2" y="2" width="20" height="20" rx="3" fill="#0f172a" />
+    <rect x="5" y="5" width="14" height="14" rx="2" fill="#ffffff" />
+    <rect x="8" y="8" width="8" height="8" rx="1" fill="#0f172a" />
+    <rect x="42" y="2" width="20" height="20" rx="3" fill="#0f172a" />
+    <rect x="45" y="5" width="14" height="14" rx="2" fill="#ffffff" />
+    <rect x="48" y="8" width="8" height="8" rx="1" fill="#0f172a" />
+    <rect x="2" y="42" width="20" height="20" rx="3" fill="#0f172a" />
+    <rect x="5" y="45" width="14" height="14" rx="2" fill="#ffffff" />
+    <rect x="8" y="48" width="8" height="8" rx="1" fill="#0f172a" />
+    <rect x="26" y="4" width="4" height="4" fill="#0f172a" /><rect x="34" y="4" width="4" height="4" fill="#0f172a" />
+    <rect x="26" y="12" width="4" height="4" fill="#0f172a" /><rect x="34" y="12" width="4" height="4" fill="#0f172a" />
+    <rect x="30" y="8" width="4" height="8" fill="#0f172a" /><rect x="4" y="26" width="4" height="4" fill="#0f172a" />
+    <rect x="12" y="26" width="4" height="4" fill="#0f172a" /><rect x="4" y="34" width="4" height="4" fill="#0f172a" />
+    <rect x="12" y="34" width="4" height="4" fill="#0f172a" /><rect x="8" y="30" width="8" height="4" fill="#0f172a" />
+    <rect x="24" y="24" width="16" height="16" rx="2" fill="#0f172a" />
+    <rect x="28" y="28" width="8" height="8" rx="1" fill="#ffffff" />
+    <rect x="30" y="30" width="4" height="4" fill="#0f172a" /><rect x="44" y="26" width="4" height="4" fill="#0f172a" />
+    <rect x="52" y="26" width="4" height="4" fill="#0f172a" /><rect x="48" y="34" width="4" height="4" fill="#0f172a" />
+    <rect x="56" y="34" width="4" height="4" fill="#0f172a" /><rect x="44" y="38" width="8" height="4" fill="#0f172a" />
+    <rect x="26" y="44" width="4" height="4" fill="#0f172a" /><rect x="34" y="44" width="4" height="4" fill="#0f172a" />
+    <rect x="26" y="52" width="4" height="4" fill="#0f172a" /><rect x="34" y="52" width="4" height="4" fill="#0f172a" />
+    <rect x="30" y="48" width="8" height="4" fill="#0f172a" /><rect x="44" y="44" width="6" height="6" fill="#0f172a" />
+    <rect x="54" y="44" width="6" height="6" fill="#0f172a" /><rect x="44" y="54" width="6" height="6" fill="#0f172a" />
+    <rect x="54" y="54" width="6" height="6" fill="#0f172a" />
+  </svg>`;
+}
+
 export default function PatientCardModal({ patient, onClose }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [viewMode, setViewMode] = useState('single'); // 'single' | 'dual'
@@ -154,9 +203,13 @@ export default function PatientCardModal({ patient, onClose }) {
       pillBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
       badgeBg: 'bg-emerald-600 text-white',
       glow: 'shadow-emerald-900/30',
-      printBorderColor: '#059669',
-      printHeaderBg: '#064e3b',
-      printAccentColor: '#047857'
+      cssFrontGradient: 'linear-gradient(135deg, #022c22 0%, #0d231b 45%, #020617 100%)',
+      cssBackGradient: 'linear-gradient(135deg, #0b1c16 0%, #020617 50%, #022c22 100%)',
+      cssBorder: 'rgba(16, 185, 129, 0.45)',
+      cssAccent: '#34d399',
+      cssBadgeBg: 'rgba(16, 185, 129, 0.2)',
+      cssBadgeBorder: 'rgba(52, 211, 153, 0.35)',
+      cssSubText: '#6ee7b7'
     },
     saffron: {
       name: 'Royal Saffron (Kerala)',
@@ -167,9 +220,13 @@ export default function PatientCardModal({ patient, onClose }) {
       pillBg: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
       badgeBg: 'bg-amber-600 text-slate-950',
       glow: 'shadow-amber-900/30',
-      printBorderColor: '#d97706',
-      printHeaderBg: '#78350f',
-      printAccentColor: '#b45309'
+      cssFrontGradient: 'linear-gradient(135deg, #451a03 0%, #261705 45%, #020617 100%)',
+      cssBackGradient: 'linear-gradient(135deg, #1f1304 0%, #020617 50%, #451a03 100%)',
+      cssBorder: 'rgba(245, 158, 11, 0.45)',
+      cssAccent: '#fbbf24',
+      cssBadgeBg: 'rgba(245, 158, 11, 0.2)',
+      cssBadgeBorder: 'rgba(251, 191, 36, 0.35)',
+      cssSubText: '#fcd34d'
     },
     teal: {
       name: 'Ayurvedic Dhanwanthari',
@@ -180,9 +237,13 @@ export default function PatientCardModal({ patient, onClose }) {
       pillBg: 'bg-teal-500/15 border-teal-500/30 text-teal-300',
       badgeBg: 'bg-teal-600 text-white',
       glow: 'shadow-teal-900/30',
-      printBorderColor: '#0d9488',
-      printHeaderBg: '#134e4a',
-      printAccentColor: '#0f766e'
+      cssFrontGradient: 'linear-gradient(135deg, #042f2e 0%, #062024 45%, #020617 100%)',
+      cssBackGradient: 'linear-gradient(135deg, #04191c 0%, #020617 50%, #042f2e 100%)',
+      cssBorder: 'rgba(20, 184, 166, 0.45)',
+      cssAccent: '#2dd4bf',
+      cssBadgeBg: 'rgba(20, 184, 166, 0.2)',
+      cssBadgeBorder: 'rgba(45, 212, 191, 0.35)',
+      cssSubText: '#5eead4'
     },
     royal: {
       name: 'Midnight Clinical',
@@ -193,26 +254,34 @@ export default function PatientCardModal({ patient, onClose }) {
       pillBg: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300',
       badgeBg: 'bg-indigo-600 text-white',
       glow: 'shadow-indigo-900/30',
-      printBorderColor: '#4f46e5',
-      printHeaderBg: '#1e1b4b',
-      printAccentColor: '#4338ca'
+      cssFrontGradient: 'linear-gradient(135deg, #0f172a 0%, #10172a 45%, #020617 100%)',
+      cssBackGradient: 'linear-gradient(135deg, #0b101f 0%, #020617 50%, #0f172a 100%)',
+      cssBorder: 'rgba(99, 102, 241, 0.45)',
+      cssAccent: '#818cf8',
+      cssBadgeBg: 'rgba(99, 102, 241, 0.2)',
+      cssBadgeBorder: 'rgba(129, 140, 248, 0.35)',
+      cssSubText: '#a5b4fc'
     }
   };
 
   const activeTheme = themes[theme] || themes.emerald;
 
-  // Print Patient Card
+  // Print Patient Card with Identical On-Screen UI
   const handlePrintCard = () => {
-    const printWindow = window.open('', '_blank', 'width=850,height=700');
+    const printWindow = window.open('', '_blank', 'width=920,height=760');
     if (!printWindow) {
       window.print();
       return;
     }
 
     const blood = patient.bloodGroup || 'O+';
-    const emergency = patient.emergencyContact?.name 
-      ? `${patient.emergencyContact.name} (${patient.emergencyContact.relation || 'Guardian'}) - ${patient.emergencyContact.phone || patient.phone}`
-      : `Primary: ${patient.phone || 'Recorded in EMR'}`;
+    const emergencyName = patient.emergencyContact?.name || 'Primary Guardian';
+    const emergencyRelation = patient.emergencyContact?.relation || 'Family';
+    const emergencyPhone = patient.emergencyContact?.phone || patient.phone || 'Recorded in Clinic EMR';
+    const allergies = patient.allergies?.length > 0 ? patient.allergies.join(', ') : 'None Reported';
+    const diet = patient.dietHabit || 'Vegetarian';
+    const barcodeSvg = generateBarcodeSvgString(patientId, activeTheme.cssAccent);
+    const qrSvg = generateQrSvgString(28);
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -222,27 +291,34 @@ export default function PatientCardModal({ patient, onClose }) {
           <style>
             @page {
               size: A4 portrait;
-              margin: 15mm;
+              margin: 12mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              box-sizing: border-box;
             }
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
               color: #0f172a;
-              background: #fff;
+              background: #f8fafc;
               margin: 0;
               padding: 0;
             }
             .page-container {
-              max-width: 720px;
+              max-width: 860px;
               margin: 0 auto;
               text-align: center;
+              padding: 10px 0;
             }
             .header-banner {
-              margin-bottom: 24px;
+              margin-bottom: 18px;
               border-bottom: 2px solid #e2e8f0;
-              padding-bottom: 12px;
+              padding-bottom: 10px;
             }
             .header-banner h1 {
-              font-size: 20px;
+              font-size: 18px;
               font-weight: 800;
               color: #064e3b;
               margin: 0;
@@ -250,215 +326,360 @@ export default function PatientCardModal({ patient, onClose }) {
               letter-spacing: 0.5px;
             }
             .header-banner p {
-              font-size: 11px;
+              font-size: 10.5px;
               color: #64748b;
-              margin: 4px 0 0;
+              margin: 3px 0 0;
             }
             .instructions {
               font-size: 10px;
-              color: #64748b;
-              margin-bottom: 20px;
-              background: #f8fafc;
-              padding: 8px 16px;
+              color: #475569;
+              margin-bottom: 18px;
+              background: #ffffff;
+              padding: 8px 18px;
               border-radius: 8px;
               border: 1px dashed #cbd5e1;
               display: inline-block;
             }
+            .cut-sheet {
+              border: 1.5px dashed #94a3b8;
+              padding: 24px 22px;
+              border-radius: 20px;
+              display: inline-block;
+              background: #ffffff;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            }
             .cards-layout {
               display: flex;
               justify-content: center;
-              gap: 20px;
+              gap: 24px;
               flex-wrap: wrap;
-              margin-bottom: 30px;
             }
-            /* Standard CR80 PVC Card Dimensions: 85.6mm x 53.98mm (~325px x 205px at 96dpi, 428px x 270px scaled) */
-            .pvc-card {
-              width: 380px;
-              height: 240px;
-              border: 1.5px solid ${activeTheme.printBorderColor};
-              border-radius: 14px;
-              overflow: hidden;
-              position: relative;
-              background: #ffffff;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            /* EXACT ON-SCREEN CR80 PVC Card Dimensions: 390px x 246px (~1.586/1 aspect ratio) */
+            .card-ui {
+              width: 390px;
+              height: 246px;
+              border-radius: 16px;
+              border: 1.5px solid ${activeTheme.cssBorder};
+              padding: 16px 18px;
+              color: #ffffff;
               display: flex;
               flex-direction: column;
-              text-align: left;
-              box-sizing: border-box;
-            }
-            .card-header {
-              background: ${activeTheme.printHeaderBg};
-              color: #ffffff;
-              padding: 8px 14px;
-              display: flex;
               justify-content: space-between;
-              align-items: center;
+              position: relative;
+              overflow: hidden;
+              text-align: left;
+              box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
             }
-            .clinic-brand {
+            .card-ui-front {
+              background: ${activeTheme.cssFrontGradient};
+            }
+            .card-ui-back {
+              background: ${activeTheme.cssBackGradient};
+            }
+            .top-row {
+              display: flex;
+              align-items: flex-start;
+              justify-content: space-between;
+              position: relative;
+              z-index: 10;
+            }
+            .brand-flex {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .brand-icon {
+              width: 32px;
+              height: 32px;
+              border-radius: 8px;
+              background: ${activeTheme.cssBadgeBg};
+              border: 1px solid ${activeTheme.cssBadgeBorder};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+              color: ${activeTheme.cssAccent};
+            }
+            .brand-title {
               font-size: 11px;
+              font-weight: 900;
+              letter-spacing: 1px;
+              color: #ffffff;
+              text-transform: uppercase;
+              line-height: 1.2;
+            }
+            .brand-sub {
+              font-size: 8.5px;
+              color: ${activeTheme.cssSubText};
+              font-weight: 500;
+            }
+            .id-tag-col {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+            }
+            .id-badge {
+              font-size: 8.5px;
               font-weight: 800;
               letter-spacing: 0.8px;
+              padding: 2px 8px;
+              border-radius: 9999px;
+              background: rgba(255, 255, 255, 0.12);
+              border: 1px solid rgba(255, 255, 255, 0.15);
+              color: ${activeTheme.cssSubText};
               text-transform: uppercase;
             }
-            .clinic-sub {
+            .lifetime-sub {
               font-size: 7.5px;
-              color: #a7f3d0;
-              opacity: 0.9;
+              color: #94a3b8;
+              margin-top: 2px;
             }
-            .card-badge {
-              font-size: 8px;
-              font-weight: 700;
-              background: rgba(255,255,255,0.2);
-              padding: 2px 7px;
-              border-radius: 6px;
-              letter-spacing: 0.5px;
-            }
-            .card-body {
-              padding: 10px 14px;
-              flex: 1;
+            .middle-row {
               display: flex;
-              gap: 12px;
+              align-items: center;
+              gap: 14px;
+              margin: auto 0;
+              padding: 4px 0;
+              position: relative;
+              z-index: 10;
             }
-            .avatar-box {
+            .avatar-square {
               width: 58px;
               height: 68px;
-              border-radius: 8px;
-              background: #f1f5f9;
-              border: 1.5px solid #cbd5e1;
+              border-radius: 12px;
+              background: rgba(30, 41, 59, 0.85);
+              border: 2px solid ${activeTheme.cssBorder};
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: center;
+              flex-shrink: 0;
+            }
+            .avatar-initial {
+              font-size: 26px;
+              font-weight: 900;
+              color: ${activeTheme.cssAccent};
+              line-height: 1;
+            }
+            .avatar-gender {
+              font-size: 8px;
               font-weight: 800;
-              font-size: 20px;
-              color: ${activeTheme.printAccentColor};
-              shrink: 0;
-            }
-            .avatar-sub {
-              font-size: 7px;
-              color: #64748b;
+              color: #94a3b8;
               text-transform: uppercase;
-              margin-top: 2px;
+              margin-top: 4px;
+              letter-spacing: 0.5px;
             }
-            .details-box {
+            .details-col {
               flex: 1;
               min-width: 0;
             }
-            .pat-name {
-              font-size: 14px;
-              font-weight: 800;
-              color: #0f172a;
-              line-height: 1.2;
+            .patient-name {
+              font-size: 15px;
+              font-weight: 900;
+              color: #ffffff;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
+              line-height: 1.2;
             }
-            .uhid-tag {
-              font-family: monospace;
-              font-size: 10.5px;
+            .uhid-code {
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              font-size: 12px;
               font-weight: 800;
-              color: ${activeTheme.printAccentColor};
+              color: ${activeTheme.cssAccent};
+              letter-spacing: 1px;
               margin: 2px 0 6px;
             }
             .meta-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 3px 8px;
-              font-size: 9px;
+              gap: 4px 8px;
+              font-size: 10.5px;
             }
-            .meta-item span.lbl {
-              color: #64748b;
+            .meta-item {
+              color: #cbd5e1;
             }
-            .meta-item span.val {
+            .meta-item .lbl {
+              color: #94a3b8;
+            }
+            .meta-item .val {
               font-weight: 700;
-              color: #1e293b;
+              color: #f1f5f9;
             }
-            .badge-blood {
-              display: inline-block;
-              background: #fee2e2;
-              color: #991b1b;
+            .blood-pill {
+              background: rgba(136, 19, 55, 0.6);
+              color: #fda4af;
+              border: 1px solid rgba(244, 63, 94, 0.4);
+              padding: 1px 6px;
+              border-radius: 4px;
               font-weight: 800;
-              padding: 0 4px;
-              border-radius: 3px;
-              font-size: 8.5px;
+              font-size: 9.5px;
+              display: inline-block;
             }
-            .card-footer {
-              background: #f8fafc;
-              border-top: 1px dashed #cbd5e1;
-              padding: 6px 14px;
+            .bottom-row {
+              padding-top: 8px;
+              border-top: 1px solid rgba(255, 255, 255, 0.12);
               display: flex;
-              justify-content: space-between;
               align-items: center;
+              justify-content: space-between;
+              position: relative;
+              z-index: 10;
             }
-            .barcode-svg {
-              font-family: monospace;
-              letter-spacing: 2px;
-              font-size: 11px;
-              font-weight: bold;
-              color: #334155;
+            .barcode-container {
+              color: ${activeTheme.cssAccent};
             }
-            .validity-tag {
-              font-size: 7.5px;
-              color: #64748b;
+            .validity-col {
               text-align: right;
             }
-
-            /* Back Card Styling */
-            .back-body {
-              padding: 10px 14px;
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              font-size: 8.5px;
+            .validity-phone {
+              font-size: 9.5px;
+              font-weight: 700;
+              color: #e2e8f0;
             }
-            .back-row {
-              margin-bottom: 5px;
-            }
-            .back-row .title {
-              font-weight: 800;
-              color: #0f172a;
-              text-transform: uppercase;
+            .validity-date {
               font-size: 8px;
-              letter-spacing: 0.4px;
-            }
-            .back-row .desc {
-              color: #334155;
+              color: #94a3b8;
               margin-top: 1px;
             }
-            .qr-contact-flex {
+
+            /* BACK CARD SPECIFIC */
+            .back-header {
               display: flex;
               align-items: center;
-              gap: 12px;
-              background: #f8fafc;
-              padding: 6px 10px;
-              border-radius: 8px;
-              border: 1px solid #e2e8f0;
-              margin-top: 4px;
+              justify-content: space-between;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+              padding-bottom: 7px;
             }
-            .emergency-box {
-              background: #fef2f2;
-              border: 1px solid #fecaca;
-              padding: 4px 8px;
-              border-radius: 6px;
-              color: #991b1b;
-              font-size: 8px;
+            .back-header-title {
+              font-size: 10.5px;
+              font-weight: 800;
+              color: ${activeTheme.cssAccent};
+              letter-spacing: 0.8px;
+              text-transform: uppercase;
+              display: flex;
+              align-items: center;
+              gap: 5px;
             }
-            .cut-guides {
-              border: 1px dashed #cbd5e1;
-              padding: 16px;
-              border-radius: 18px;
-              display: inline-block;
-              background: #ffffff;
-            }
-            .scissor-note {
-              font-size: 9px;
+            .back-header-tag {
+              font-size: 8.5px;
               color: #94a3b8;
-              margin-top: 12px;
+            }
+            .back-content {
+              display: flex;
+              flex-direction: column;
+              gap: 7px;
+              margin: auto 0;
+              font-size: 10px;
+            }
+            .emergency-card {
+              background: rgba(136, 19, 55, 0.45);
+              border: 1px solid rgba(244, 63, 94, 0.35);
+              border-radius: 10px;
+              padding: 6px 10px;
+              color: #fecaca;
+            }
+            .emergency-label {
+              font-size: 8px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 0.6px;
+              color: #fda4af;
+              margin-bottom: 1px;
+            }
+            .emergency-name {
+              font-size: 10.5px;
+              font-weight: 700;
+              color: #ffffff;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .emergency-phone {
+              font-family: ui-monospace, SFMono-Regular, monospace;
+              font-size: 9.5px;
+              color: #fecaca;
+            }
+            .info-box-flex {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              background: rgba(15, 23, 42, 0.65);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 10px;
+              padding: 6px 10px;
+            }
+            .info-label {
+              font-size: 8px;
+              color: #94a3b8;
+              text-transform: uppercase;
+            }
+            .info-val {
+              font-size: 10px;
+              font-weight: 600;
+              color: #e2e8f0;
+            }
+            .info-val-diet {
+              font-size: 10px;
+              font-weight: 700;
+              color: ${activeTheme.cssAccent};
+            }
+            .back-footer {
+              padding-top: 8px;
+              border-top: 1px solid rgba(255, 255, 255, 0.12);
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              font-size: 8px;
+              color: #94a3b8;
+            }
+            .qr-flex {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .qr-box {
+              padding: 3px;
+              background: #ffffff;
+              border-radius: 6px;
               display: flex;
               align-items: center;
               justify-content: center;
-              gap: 6px;
+            }
+            .helpline-text {
+              line-height: 1.3;
+            }
+            .helpline-bold {
+              font-weight: 800;
+              color: #e2e8f0;
+            }
+            .back-footer-right {
+              font-weight: 700;
+              color: ${activeTheme.cssAccent};
+              text-align: right;
+            }
+            .scissor-guide {
+              margin-top: 16px;
+              font-size: 9px;
+              color: #64748b;
+              letter-spacing: 0.5px;
+            }
+
+            @media print {
+              body {
+                background: #ffffff !important;
+              }
+              .page-container {
+                padding: 0 !important;
+                margin: 0 auto !important;
+              }
+              .instructions, .header-banner {
+                display: none !important;
+              }
+              .cut-sheet {
+                border: 1px dashed #cbd5e1 !important;
+                padding: 10px !important;
+                box-shadow: none !important;
+              }
             }
           </style>
         </head>
@@ -466,89 +687,96 @@ export default function PatientCardModal({ patient, onClose }) {
           <div class="page-container">
             <div class="header-banner">
               <h1>AyurCare Clinical Systems</h1>
-              <p>Official Patient Health Card &amp; Universal Health ID (UHID) — Print Ready</p>
+              <p>Official Patient Health ID Card &amp; Universal Health ID (UHID) — Print Ready</p>
             </div>
 
             <div class="instructions">
               ✂️ <strong>Print &amp; Laminate Instructions:</strong> Print on CR80 PVC Card stock or A4 heavy cardstock. Cut along the outer dashed guides and fold down the center for a durable dual-sided wallet card.
             </div>
 
-            <div class="cut-guides">
+            <div class="cut-sheet">
               <div class="cards-layout">
-                <!-- FRONT SIDE -->
-                <div class="pvc-card">
-                  <div class="card-header">
-                    <div>
-                      <div class="clinic-brand">🌿 AYURCARE CLINIC</div>
-                      <div class="clinic-sub">Classical Panchakarma &amp; Rogi Pariksha</div>
+                <!-- FRONT CARD -->
+                <div class="card-ui card-ui-front">
+                  <div class="top-row">
+                    <div class="brand-flex">
+                      <div class="brand-icon">🌿</div>
+                      <div>
+                        <div class="brand-title">AYURCARE CLINIC</div>
+                        <div class="brand-sub">Classical Panchakarma &amp; Rogi Pariksha</div>
+                      </div>
                     </div>
-                    <div class="card-badge">HEALTH ID</div>
+                    <div class="id-tag-col">
+                      <div class="id-badge">Smart Health ID</div>
+                      <div class="lifetime-sub">Lifetime UHID</div>
+                    </div>
                   </div>
-                  <div class="card-body">
-                    <div class="avatar-box">
-                      ${patient.name ? patient.name.charAt(0).toUpperCase() : 'P'}
-                      <div class="avatar-sub">${patient.gender || 'OPD'}</div>
+
+                  <div class="middle-row">
+                    <div class="avatar-square">
+                      <div class="avatar-initial">${patient.name ? patient.name.charAt(0).toUpperCase() : 'P'}</div>
+                      <div class="avatar-gender">${patient.gender || 'OPD'}</div>
                     </div>
-                    <div class="details-box">
-                      <div class="pat-name">${patient.name}</div>
-                      <div class="uhid-tag">UHID: ${patientId}</div>
+
+                    <div class="details-col">
+                      <div class="patient-name">${patient.name}</div>
+                      <div class="uhid-code">${patientId}</div>
                       <div class="meta-grid">
-                        <div class="meta-item"><span class="lbl">Age/Gender: </span><span class="val">${patient.age || '—'} Y / ${patient.gender || '—'}</span></div>
-                        <div class="meta-item"><span class="lbl">Blood Group: </span><span class="val badge-blood">${blood}</span></div>
-                        <div class="meta-item"><span class="lbl">Phone: </span><span class="val">${patient.phone || '—'}</span></div>
-                        <div class="meta-item"><span class="lbl">Status: </span><span class="val" style="color:#059669;font-weight:700;">Active OPD</span></div>
+                        <div class="meta-item"><span class="lbl">Age: </span><span class="val">${patient.age || '—'} Yrs</span></div>
+                        <div class="meta-item"><span class="lbl">Blood: </span><span class="blood-pill">${blood}</span></div>
+                        <div class="meta-item" style="grid-column: span 2;"><span class="lbl">Contact: </span><span class="val">📞 ${patient.phone || '—'}</span></div>
                       </div>
                     </div>
                   </div>
-                  <div class="card-footer">
-                    <div class="barcode-svg">||| | |||| | || | |||</div>
-                    <div class="validity-tag">
-                      <strong>LIFETIME UHID</strong><br/>
-                      Issued: ${issueDate}
+
+                  <div class="bottom-row">
+                    <div class="barcode-container">${barcodeSvg}</div>
+                    <div class="validity-col">
+                      <div class="validity-phone">📞 ${patient.phone || 'No phone'}</div>
+                      <div class="validity-date">Issued: ${issueDate}</div>
                     </div>
                   </div>
                 </div>
 
-                <!-- BACK SIDE -->
-                <div class="pvc-card">
-                  <div class="card-header">
-                    <div class="clinic-brand">PATIENT CLINICAL PROFILE</div>
-                    <div class="card-badge">EMERGENCY</div>
+                <!-- BACK CARD -->
+                <div class="card-ui card-ui-back">
+                  <div class="back-header">
+                    <div class="back-header-title">🛡️ Emergency &amp; Medical Alert</div>
+                    <div class="back-header-tag">Scan for Verification</div>
                   </div>
-                  <div class="back-body">
-                    <div class="emergency-box">
-                      <strong>🚨 Emergency Contact:</strong><br/>
-                      ${emergency}
+
+                  <div class="back-content">
+                    <div class="emergency-card">
+                      <div class="emergency-label">🚨 Emergency Contact:</div>
+                      <div class="emergency-name">${emergencyName} (${emergencyRelation})</div>
+                      <div class="emergency-phone">📞 ${emergencyPhone}</div>
                     </div>
 
-                    <div class="back-row" style="margin-top:4px;">
-                      <div class="title">Known Allergies / Medical Alerts</div>
-                      <div class="desc">${patient.allergies?.length > 0 ? patient.allergies.join(', ') : 'No known drug allergies reported.'}</div>
-                    </div>
-
-                    <div class="back-row">
-                      <div class="title">Clinical Notes / Imbalance</div>
-                      <div class="desc">${patient.vikriti || patient.notes || 'Ayurvedic Constitutional Health Management'}</div>
-                    </div>
-
-                    <div class="qr-contact-flex">
-                      <div style="font-family:monospace;font-size:12px;font-weight:900;letter-spacing:1px;background:#0f172a;color:#fff;padding:4px 6px;border-radius:4px;">
-                        [QR-CHECKIN]
+                    <div class="info-box-flex">
+                      <div>
+                        <div class="info-label">Allergies &amp; Alerts:</div>
+                        <div class="info-val">${allergies}</div>
                       </div>
-                      <div style="font-size:7.5px;color:#475569;line-height:1.3;">
-                        <strong>Hospital Helpline:</strong> +91 98470 12345<br/>
-                        <strong>Emergency:</strong> +91 484 290 8800<br/>
-                        Present this card for paperless OP tokens &amp; Panchakarma logs.
+                      <div style="text-align: right;">
+                        <div class="info-label">Diet Habit:</div>
+                        <div class="info-val-diet">${diet}</div>
                       </div>
                     </div>
                   </div>
-                  <div class="card-footer">
-                    <div style="font-size:7.5px;color:#64748b;font-weight:bold;">AyurCare Hospital Information Management System</div>
-                    <div class="validity-tag" style="color:#059669;font-weight:bold;">VERIFIED PATIENT</div>
+
+                  <div class="back-footer">
+                    <div class="qr-flex">
+                      <div class="qr-box">${qrSvg}</div>
+                      <div class="helpline-text">
+                        <div class="helpline-bold">AyurCare 24/7 Helpline</div>
+                        <div>+91 98470 12345 | help@ayurcare.org</div>
+                      </div>
+                    </div>
+                    <div class="back-footer-right">Present for Fast Token &amp; EMR</div>
                   </div>
                 </div>
               </div>
-              <div class="scissor-note">✂️ Cut along the outer card boundaries to separate or fold Front &amp; Back</div>
+              <div class="scissor-guide">✂️ Cut along outer boundaries to fold Front &amp; Back into standard CR80 wallet size</div>
             </div>
           </div>
           <script>
