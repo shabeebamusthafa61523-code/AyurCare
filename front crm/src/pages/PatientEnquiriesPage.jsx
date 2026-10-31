@@ -18,11 +18,13 @@ import {
   Trash2,
   History,
   Users,
-  FileText
+  FileText,
+  CreditCard
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientDetailsModal from '../components/PatientDetailsModal';
+import PatientCardModal from '../components/PatientCardModal';
 
 export default function PatientEnquiriesPage() {
   const [patients, setPatients] = useState([]);
@@ -33,6 +35,7 @@ export default function PatientEnquiriesPage() {
   const [selectedPatientForAppt, setSelectedPatientForAppt] = useState(null);
   const [showApptModal, setShowApptModal] = useState(false);
   const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
+  const [selectedPatientForCard, setSelectedPatientForCard] = useState(null);
 
   const [doctors, setDoctors] = useState([]);
 
@@ -352,6 +355,17 @@ export default function PatientEnquiriesPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPatientForCard(patient);
+                          }}
+                          className="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-semibold px-2.5 py-1.5 rounded-xl text-xs transition border border-amber-200/80 dark:border-amber-800/50 cursor-pointer"
+                          title="Generate & Print Patient Health Card"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Card
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -749,6 +763,14 @@ export default function PatientEnquiriesPage() {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Patient Health ID Card Modal */}
+      {selectedPatientForCard && (
+        <PatientCardModal
+          patient={selectedPatientForCard}
+          onClose={() => setSelectedPatientForCard(null)}
+        />
       )}
 
       {/* Patient 360 Full Details & Logs Modal */}

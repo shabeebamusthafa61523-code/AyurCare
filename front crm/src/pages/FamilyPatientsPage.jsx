@@ -29,11 +29,13 @@ import {
   ChevronRight,
   ShieldCheck,
   Building2,
-  Filter
+  Filter,
+  CreditCard
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
 import ConfirmationModal from '../components/ConfirmationModal';
 import PatientDetailsModal from '../components/PatientDetailsModal';
+import PatientCardModal from '../components/PatientCardModal';
 
 export default function FamilyPatientsPage() {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ export default function FamilyPatientsPage() {
   
   // 360 Details Modal State
   const [selectedPatientForDetails, setSelectedPatientForDetails] = useState(null);
+  const [selectedPatientForCard, setSelectedPatientForCard] = useState(null);
 
   // Add / Edit Member Modal State
   const [showMemberModal, setShowMemberModal] = useState(false);
@@ -686,6 +689,16 @@ export default function FamilyPatientsPage() {
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0 pt-2 md:pt-0">
+                          {/* Patient Health ID Card */}
+                          <button
+                            onClick={() => setSelectedPatientForCard(member)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-colors border border-amber-200/80 dark:border-amber-800/80 cursor-pointer"
+                            title="Generate & Print Patient Health Card"
+                          >
+                            <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <span>Card</span>
+                          </button>
+
                           {/* 360 History Modal Trigger */}
                           <button
                             onClick={() => setSelectedPatientForDetails(member)}
@@ -923,6 +936,14 @@ export default function FamilyPatientsPage() {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Patient Health ID Card Modal */}
+      {selectedPatientForCard && (
+        <PatientCardModal
+          patient={selectedPatientForCard}
+          onClose={() => setSelectedPatientForCard(null)}
+        />
       )}
 
       {/* Patient 360 Full Medical History Modal */}
