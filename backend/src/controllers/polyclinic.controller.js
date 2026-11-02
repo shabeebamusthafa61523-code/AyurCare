@@ -811,13 +811,14 @@ export const createAppointment = async (req, res) => {
     const todayCount = await Appointment.countDocuments({ date: { $gte: dateStart, $lte: dateEnd } });
     const tokenNumber = todayCount + 1;
 
-    let serviceId = req.body.service || req.body.serviceId || null;
-    let serviceName = req.body.serviceName || '';
-    let serviceCategory = req.body.serviceCategory || '';
-    let servicePrice = req.body.servicePrice !== undefined ? Number(req.body.servicePrice) : 0;
-    let serviceDuration = req.body.serviceDuration || '';
+    let servicesList = Array.isArray(req.body.services) && req.body.services.length > 0 ? req.body.services : [];
+    let serviceId = req.body.service || req.body.serviceId || (servicesList[0]?.service || servicesList[0]?._id) || null;
+    let serviceName = req.body.serviceName || (servicesList.length > 0 ? servicesList.map(s => s.name).join(', ') : '');
+    let serviceCategory = req.body.serviceCategory || (servicesList.length > 0 ? servicesList.map(s => s.category).filter(Boolean).join(', ') : '');
+    let servicePrice = req.body.servicePrice !== undefined ? Number(req.body.servicePrice) : (servicesList.length > 0 ? servicesList.reduce((sum, s) => sum + (Number(s.price) || 0), 0) : 0);
+    let serviceDuration = req.body.serviceDuration || (servicesList.length > 0 ? servicesList.map(s => s.duration).filter(Boolean).join(' + ') : '');
 
-    if (serviceId) {
+    if (serviceId && servicesList.length === 0) {
       const s = await ClinicService.findById(serviceId);
       if (s) {
         if (!serviceName) serviceName = s.name;
@@ -836,6 +837,7 @@ export const createAppointment = async (req, res) => {
       timeSlot,
       appointmentNo,
       tokenNumber,
+      services: servicesList,
       service: serviceId || null,
       serviceName,
       serviceCategory,
@@ -1008,7 +1010,23 @@ export const updateAppointmentStatus = async (req, res) => {
 
 export const updateAppointment = async (req, res) => {
   try {
-    const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = { ...req.body };
+    if (Array.isArray(req.body.services) && req.body.services.length > 0) {
+      updateData.services = req.body.services;
+      if (!updateData.serviceName) {
+        updateData.serviceName = req.body.services.map(s => s.name).join(', ');
+      }
+      if (!updateData.serviceCategory) {
+        updateData.serviceCategory = req.body.services.map(s => s.category).filter(Boolean).join(', ');
+      }
+      if (updateData.servicePrice === undefined) {
+        updateData.servicePrice = req.body.services.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+      }
+      if (!updateData.serviceDuration) {
+        updateData.serviceDuration = req.body.services.map(s => s.duration).filter(Boolean).join(' + ');
+      }
+    }
+    const updated = await Appointment.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!updated) return res.status(404).json({ success: false, message: 'Appointment not found' });
     res.json({ success: true, appointment: updated, data: updated });
   } catch (err) {
@@ -1737,10 +1755,17 @@ export const createPanchakarmaBooking = async (req, res) => {
     let status = req.body.status || 'Scheduled';
     if (status === 'In Progress') status = 'In-Progress';
 
+    let therapiesList = Array.isArray(req.body.therapies) && req.body.therapies.length > 0 ? req.body.therapies : [];
+    let therapyName = req.body.therapyName || (therapiesList.length > 0 ? therapiesList.map(t => t.name).join(' + ') : 'Abhyanga & Swedana');
+    let packageCost = req.body.packageCost !== undefined ? Number(req.body.packageCost) : (therapiesList.length > 0 ? therapiesList.reduce((sum, t) => sum + (Number(t.price) || 0), 0) * (Number(req.body.totalSessions) || 1) : 7500);
+
     const count = await Panchakarma.countDocuments();
     const bookingNo = `PK-${Date.now().toString().slice(-4)}${count + 1}`;
     const booking = await Panchakarma.create({
       ...req.body,
+      therapies: therapiesList,
+      therapyName,
+      packageCost,
       patient: patientId,
       patientName: patientName || 'Patient',
       patientPhone: patientPhone || '',
@@ -1755,7 +1780,14 @@ export const createPanchakarmaBooking = async (req, res) => {
 
 export const updatePanchakarmaBooking = async (req, res) => {
   try {
-    const booking = await Panchakarma.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = { ...req.body };
+    if (Array.isArray(req.body.therapies) && req.body.therapies.length > 0) {
+      updateData.therapies = req.body.therapies;
+      if (!updateData.therapyName) {
+        updateData.therapyName = req.body.therapies.map(t => t.name).join(' + ');
+      }
+    }
+    const booking = await Panchakarma.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json({ success: true, booking });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });

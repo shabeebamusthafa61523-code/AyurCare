@@ -4,13 +4,15 @@ import {
   User, Phone, Mail, MapPin, Calendar, Clock, Stethoscope, Sparkles, 
   FileText, Activity, Receipt, CheckCircle2, AlertCircle, X, RefreshCw, 
   HeartPulse, Flame, ArrowRight, Pill, BadgeCheck, ShieldAlert, 
-  History, Layers, ChevronRight
+  History, Layers, ChevronRight, CreditCard
 } from 'lucide-react';
 import { polyclinicService } from '../services/polyclinicService';
+import PatientCardModal from './PatientCardModal';
 
 export default function PatientDetailsModal({ isOpen, onClose, patientId, initialPatient }) {
   const [loading, setLoading] = useState(true);
   const [patientData, setPatientData] = useState(initialPatient || null);
+  const [showCardModal, setShowCardModal] = useState(false);
   const [history, setHistory] = useState({
     appointments: [],
     emrs: [],
@@ -194,6 +196,15 @@ export default function PatientDetailsModal({ isOpen, onClose, patientId, initia
             </div>
 
             <div className="flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => setShowCardModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-xs font-bold transition cursor-pointer shadow-xs"
+                title="Generate and print official AyurCare Health ID Card"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Health ID Card</span>
+              </button>
               <button 
                 onClick={loadFullDetails}
                 className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition"
@@ -622,6 +633,14 @@ export default function PatientDetailsModal({ isOpen, onClose, patientId, initia
           </button>
         </div>
       </div>
+
+      {/* Patient Health ID Card Modal */}
+      {showCardModal && (
+        <PatientCardModal
+          patient={p}
+          onClose={() => setShowCardModal(false)}
+        />
+      )}
     </div>,
     document.body
   );

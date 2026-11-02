@@ -42,6 +42,7 @@ export default function ReceptionQueuePage() {
     date: new Date().toISOString().split('T')[0],
     doctorId: '',
     doctorName: '',
+    selectedServices: [],
     serviceId: '',
     serviceName: '',
     serviceCategory: '',
@@ -174,26 +175,71 @@ export default function ReceptionQueuePage() {
     }
   };
 
-  const handleServiceChange = (serviceId) => {
+  const handleAddServiceToToken = (serviceId) => {
+    if (!serviceId) return;
     const selectedS = services.find(s => s._id === serviceId);
-    if (selectedS) {
-      const isTherapy = (selectedS.category || '').toLowerCase().includes('panchakarma') || 
-                        (selectedS.category || '').toLowerCase().includes('therapy');
-      setTokenForm(prev => ({
-        ...prev,
-        serviceId: selectedS._id,
-        serviceName: selectedS.name,
-        serviceCategory: selectedS.category,
-        serviceDuration: selectedS.duration,
-        servicePrice: selectedS.price,
-        consultationFee: selectedS.price,
-        appointmentType: isTherapy ? 'Panchakarma Therapy Session' : 'Doctor Consultation',
-        cabin: isTherapy && prev.cabin.includes('OP Cabin') ? 'Panchakarma Suite A (Droni Bed 1)' : prev.cabin
-      }));
-    } else {
+    if (!selectedS) return;
+    const current = tokenForm.selectedServices || [];
+    if (current.some(s => s._id === selectedS._id || s.name.toLowerCase() === selectedS.name.toLowerCase())) {
+      return; // Already selected
+    }
+    const updated = [...current, selectedS];
+    const combinedName = updated.map(s => s.name).join(', ');
+    const combinedCategory = updated.map(s => s.category).filter(Boolean).join(', ');
+    const combinedDuration = updated.map(s => s.duration).filter(Boolean).join(' + ');
+    const totalFee = updated.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+    const hasTherapy = updated.some(s => 
+      (s.category || '').toLowerCase().includes('panchakarma') || 
+      (s.category || '').toLowerCase().includes('therapy')
+    );
+
+    setTokenForm(prev => ({
+      ...prev,
+      selectedServices: updated,
+      serviceId: updated[0]?._id || '',
+      serviceName: combinedName,
+      serviceCategory: combinedCategory,
+      serviceDuration: combinedDuration,
+      servicePrice: totalFee,
+      consultationFee: totalFee > 0 ? totalFee : prev.consultationFee,
+      appointmentType: hasTherapy ? 'Panchakarma Therapy Session' : 'Doctor Consultation',
+      cabin: hasTherapy && prev.cabin.includes('OP Cabin') ? 'Panchakarma Suite A (Droni Bed 1)' : prev.cabin
+    }));
+  };
+
+  const handleRemoveServiceFromToken = (indexToRemove) => {
+    const current = tokenForm.selectedServices || [];
+    const updated = current.filter((_, idx) => idx !== indexToRemove);
+    const combinedName = updated.map(s => s.name).join(', ');
+    const combinedCategory = updated.map(s => s.category).filter(Boolean).join(', ');
+    const combinedDuration = updated.map(s => s.duration).filter(Boolean).join(' + ');
+    const totalFee = updated.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+    const hasTherapy = updated.some(s => 
+      (s.category || '').toLowerCase().includes('panchakarma') || 
+      (s.category || '').toLowerCase().includes('therapy')
+    );
+    const doc = doctors.find(d => ((d.doctor?._id || d._id) === tokenForm.doctorId));
+
+    setTokenForm(prev => ({
+      ...prev,
+      selectedServices: updated,
+      serviceId: updated[0]?._id || '',
+      serviceName: combinedName,
+      serviceCategory: combinedCategory,
+      serviceDuration: combinedDuration,
+      servicePrice: totalFee,
+      consultationFee: totalFee > 0 ? totalFee : (doc?.consultationFee || 500),
+      appointmentType: hasTherapy ? 'Panchakarma Therapy Session' : 'Doctor Consultation',
+      cabin: !hasTherapy && prev.cabin.includes('Panchakarma Suite') ? 'OP Cabin 1 (Kayachikitsa)' : prev.cabin
+    }));
+  };
+
+  const handleServiceChange = (serviceId) => {
+    if (!serviceId) {
       const doc = doctors.find(d => ((d.doctor?._id || d._id) === tokenForm.doctorId));
       setTokenForm(prev => ({
         ...prev,
+        selectedServices: [],
         serviceId: '',
         serviceName: '',
         serviceCategory: '',
@@ -202,7 +248,9 @@ export default function ReceptionQueuePage() {
         consultationFee: doc?.consultationFee || 500,
         appointmentType: 'Doctor Consultation'
       }));
+      return;
     }
+    handleAddServiceToToken(serviceId);
   };
 
   // Voice Speech Chime Announcement
@@ -259,6 +307,27 @@ export default function ReceptionQueuePage() {
       const isToday = !tokenForm.date || tokenForm.date === new Date().toISOString().split('T')[0];
       const chosenDate = tokenForm.date ? new Date(tokenForm.date + 'T09:30:00').toISOString() : new Date().toISOString();
 
+      const servicesPayload = (tokenForm.selectedServices && tokenForm.selectedServices.length > 0)
+        ? tokenForm.selectedServices.map(s => ({
+            service: s._id || s.service || null,
+            name: s.name,
+            category: s.category || '',
+            price: Number(s.price || s.fee) || 0,
+            duration: s.duration || ''
+          }))
+        : (tokenForm.serviceId ? [{
+            service: tokenForm.serviceId,
+            name: tokenForm.serviceName,
+            category: tokenForm.serviceCategory || '',
+            price: Number(tokenForm.servicePrice || tokenForm.consultationFee) || 0,
+            duration: tokenForm.serviceDuration || ''
+          }] : []);
+
+      const combinedServiceName = servicesPayload.length > 0 ? servicesPayload.map(s => s.name).join(', ') : (tokenForm.serviceName || '');
+      const combinedCategory = servicesPayload.length > 0 ? servicesPayload.map(s => s.category).filter(Boolean).join(', ') : (tokenForm.serviceCategory || '');
+      const combinedDuration = servicesPayload.length > 0 ? servicesPayload.map(s => s.duration).filter(Boolean).join(' + ') : (tokenForm.serviceDuration || '');
+      const totalServicesFee = servicesPayload.length > 0 ? servicesPayload.reduce((sum, s) => sum + (Number(s.price) || 0), 0) : (Number(tokenForm.servicePrice) || 0);
+
       const apptPayload = {
         patient: patientId,
         patientName,
@@ -267,11 +336,12 @@ export default function ReceptionQueuePage() {
         doctorName: tokenForm.doctorName,
         department: tokenForm.department,
         appointmentType: tokenForm.appointmentType,
-        service: tokenForm.serviceId || null,
-        serviceName: tokenForm.serviceName || '',
-        serviceCategory: tokenForm.serviceCategory || '',
-        serviceDuration: tokenForm.serviceDuration || '',
-        servicePrice: Number(tokenForm.servicePrice || tokenForm.consultationFee) || 0,
+        services: servicesPayload,
+        service: tokenForm.serviceId || servicesPayload[0]?.service || null,
+        serviceName: combinedServiceName,
+        serviceCategory: combinedCategory,
+        serviceDuration: combinedDuration,
+        servicePrice: totalServicesFee,
         date: chosenDate,
         timeSlot: isToday ? 'Walk-in OP' : 'Scheduled OP',
         status: isToday ? 'Checked-In' : 'Scheduled', // Immediately in waiting queue if today!
@@ -289,6 +359,7 @@ export default function ReceptionQueuePage() {
           setTokenForm(prev => ({
             ...prev,
             date: new Date().toISOString().split('T')[0],
+            selectedServices: [],
             serviceId: '',
             serviceName: '',
             serviceCategory: '',
@@ -310,16 +381,18 @@ export default function ReceptionQueuePage() {
           ...res.appointment,
           patientDetails: patientMode === 'new' ? newPatient : patients.find(p => p._id === patientId),
           cabin: tokenForm.cabin,
-          serviceName: tokenForm.serviceName || res.appointment.serviceName,
-          serviceCategory: tokenForm.serviceCategory || res.appointment.serviceCategory,
-          serviceDuration: tokenForm.serviceDuration || res.appointment.serviceDuration,
-          servicePrice: tokenForm.servicePrice || res.appointment.servicePrice
+          services: servicesPayload,
+          serviceName: combinedServiceName || res.appointment.serviceName,
+          serviceCategory: combinedCategory || res.appointment.serviceCategory,
+          serviceDuration: combinedDuration || res.appointment.serviceDuration,
+          servicePrice: totalServicesFee || res.appointment.servicePrice
         });
         // Reset new patient form and service selection
         setNewPatient({ name: '', phone: '', age: '', gender: 'Male', prakriti: 'Vata-Pitta' });
         setTokenForm(prev => ({
           ...prev,
           date: new Date().toISOString().split('T')[0],
+          selectedServices: [],
           serviceId: '',
           serviceName: '',
           serviceCategory: '',
@@ -336,10 +409,49 @@ export default function ReceptionQueuePage() {
     setEditingTokenId(token._id);
     setPatientMode('existing');
     setSelectedPatientId(typeof token.patient === 'object' ? token.patient?._id : token.patient);
+
+    let initialServices = [];
+    if (Array.isArray(token.services) && token.services.length > 0) {
+      initialServices = token.services.map(s => ({
+        _id: s.service?._id || s.service || s._id,
+        name: s.name,
+        category: s.category || '',
+        price: Number(s.price) || 0,
+        duration: s.duration || ''
+      }));
+    } else if (token.service) {
+      const sId = typeof token.service === 'object' ? token.service._id : token.service;
+      const matched = services.find(s => s._id === sId);
+      if (matched) {
+        initialServices = [matched];
+      } else if (token.serviceName) {
+        initialServices = [{
+          _id: sId,
+          name: token.serviceName,
+          category: token.serviceCategory || '',
+          price: token.servicePrice || token.consultationFee || 500,
+          duration: token.serviceDuration || ''
+        }];
+      }
+    } else if (token.serviceName) {
+      const parts = token.serviceName.split(', ');
+      initialServices = parts.map(pName => {
+        const matched = services.find(s => s.name.toLowerCase() === pName.trim().toLowerCase());
+        return matched || {
+          _id: '',
+          name: pName.trim(),
+          category: token.serviceCategory || '',
+          price: token.servicePrice || 0,
+          duration: token.serviceDuration || ''
+        };
+      });
+    }
+
     setTokenForm({
       date: token.date ? new Date(token.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       doctorId: typeof token.doctor === 'object' ? token.doctor?._id : (token.doctor || ''),
       doctorName: token.doctorName || '',
+      selectedServices: initialServices,
       serviceId: typeof token.service === 'object' ? token.service?._id : (token.service || ''),
       serviceName: token.serviceName || '',
       serviceCategory: token.serviceCategory || '',
@@ -393,6 +505,10 @@ export default function ReceptionQueuePage() {
     const serviceName = slip.serviceName || slip.appointmentType || 'Ayurvedic OP Consultation';
     const fee = slip.servicePrice || slip.consultationFee || 500;
     const refNo = slip.appointmentNo || `APT-${(slip._id || '').slice(-6).toUpperCase()}`;
+
+    const servicesRows = (Array.isArray(slip.services) && slip.services.length > 0)
+      ? slip.services.map((s, idx) => `<div class="row"><span class="k">${idx + 1}. ${s.name} ${s.duration ? `(${s.duration})` : ''}</span><span class="v">₹${s.price || s.fee || 0}</span></div>`).join('')
+      : `<div class="row"><span class="k">Service / Karma:</span><span class="v">${serviceName}</span></div>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -463,8 +579,8 @@ export default function ReceptionQueuePage() {
           <div class="row"><span class="k">Attending Vaidya:</span><span class="v">${doctorName}</span></div>
           <div class="row"><span class="k">Cabin / Room:</span><span class="v">${cabin}</span></div>
           <div class="divider"></div>
-          <div class="row"><span class="k">Service / Karma:</span><span class="v">${serviceName}</span></div>
-          <div class="row"><span class="k">Consultation Fee:</span><span class="v" style="font-size:12px;">₹${fee}</span></div>
+          ${servicesRows}
+          <div class="row"><span class="k">Total Fee:</span><span class="v" style="font-size:12px;">₹${fee}</span></div>
           <div class="tip">
             🌿 <b>Pathya Reminder:</b> Please relax in the waiting lounge. Avoid cold drinks before Nadi Pariksha.
           </div>
@@ -771,6 +887,18 @@ export default function ReceptionQueuePage() {
           <button
             onClick={() => {
               setEditingTokenId(null);
+              setTokenForm(prev => ({
+                ...prev,
+                date: new Date().toISOString().split('T')[0],
+                selectedServices: [],
+                serviceId: '',
+                serviceName: '',
+                serviceCategory: '',
+                serviceDuration: '',
+                servicePrice: 0,
+                consultationFee: 500,
+                appointmentType: 'Doctor Consultation'
+              }));
               setShowTokenModal(true);
             }}
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition cursor-pointer"
@@ -1575,46 +1703,114 @@ export default function ReceptionQueuePage() {
                 />
               </div>
 
-              {/* Treatment / Service Selection */}
+              {/* Treatment / Service Selection (Multi-Select) */}
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                    Treatment / Therapy Service
+                    Treatment &amp; Therapy Services
                   </label>
-                  <span className="text-[10px] text-slate-400 font-medium">Optional (Auto-sets fee)</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {(tokenForm.selectedServices || []).length} { (tokenForm.selectedServices || []).length === 1 ? 'Service Added' : 'Services Added' }
+                  </span>
                 </div>
+
+                {/* Selected Services Chips */}
+                {(tokenForm.selectedServices && tokenForm.selectedServices.length > 0) && (
+                  <div className="space-y-1.5 mb-2 max-h-36 overflow-y-auto pr-1">
+                    {tokenForm.selectedServices.map((s, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded-xl border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-emerald-500/30 transition shadow-xs"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <div className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 truncate text-xs">
+                              {s.name}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              {s.duration && (
+                                <span className="flex items-center gap-0.5">
+                                  <Clock className="w-2.5 h-2.5 text-slate-400" /> {s.duration}
+                                </span>
+                              )}
+                              {s.category && (
+                                <span className="px-1.5 py-0.2 rounded bg-slate-200/60 dark:bg-slate-700 text-[9px] text-slate-600 dark:text-slate-300">
+                                  {s.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                            ₹{s.price || s.fee || 0}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveServiceFromToken(idx)}
+                            title="Remove service"
+                            className="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Service Dropdown */}
                 <select
-                  value={tokenForm.serviceId}
-                  onChange={(e) => handleServiceChange(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-semibold"
+                  value=""
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) handleAddServiceToToken(val);
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-dashed border-emerald-400/60 dark:border-emerald-500/40 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
-                  <option value="">-- General Vaidya Consultation (Default: ₹500) --</option>
-                  {services.map(s => (
-                    <option key={s._id} value={s._id}>
-                      {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
-                    </option>
-                  ))}
+                  <option value="">➕ Add treatment / therapy service to token...</option>
+                  {services.map(s => {
+                    const isSelected = (tokenForm.selectedServices || []).some(sel => (sel._id === s._id) || (sel.name && sel.name.toLowerCase() === s.name.toLowerCase()));
+                    return (
+                      <option key={s._id} value={s._id} disabled={isSelected}>
+                        {isSelected ? '✓ ' : ''}{s.name} — ₹{s.price} ({s.duration}) [{s.category}]
+                      </option>
+                    );
+                  })}
                 </select>
 
-                {tokenForm.serviceId && (() => {
-                  const s = services.find(x => x._id === tokenForm.serviceId);
-                  return s ? (
-                    <div className="mt-1.5 flex items-center justify-between text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-500/20">
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span>{s.category}</span>
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                          <Clock className="w-3 h-3" /> {s.duration}
-                        </span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                          ₹{s.price}
-                        </span>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
+                {/* Quick Add Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                  <span className="text-[10px] text-slate-400 font-medium mr-0.5">Quick Add:</span>
+                  {[
+                    'Shirodhara',
+                    'Abhyanga',
+                    'Swedana',
+                    'Janu Basti',
+                    'Kati Basti',
+                    'Elakizhi',
+                    'Njavarakizhi',
+                    'Nasya'
+                  ].map(quickKeyword => {
+                    const matchedService = services.find(s => s.name && s.name.toLowerCase().includes(quickKeyword.toLowerCase()));
+                    if (!matchedService) return null;
+                    const isAdded = (tokenForm.selectedServices || []).some(s => (s._id === matchedService._id) || (s.name && s.name.toLowerCase() === matchedService.name.toLowerCase()));
+                    if (isAdded) return null;
+                    return (
+                      <button
+                        key={quickKeyword}
+                        type="button"
+                        onClick={() => handleAddServiceToToken(matchedService._id)}
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" /> {quickKeyword}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Vaidya & Cabin Assignment */}
@@ -1773,14 +1969,28 @@ export default function ReceptionQueuePage() {
                   <span className="text-slate-400">Cabin / Room:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">{activeSlip.cabin || activeSlip.notes || 'Cabin 1'}</span>
                 </div>
-                {activeSlip.serviceName && (
+                {activeSlip.services && activeSlip.services.length > 0 ? (
+                  <div className="py-1 border-t border-b border-dashed border-amber-300/60 dark:border-slate-700 my-1 space-y-1">
+                    <span className="text-slate-500 text-[10px] font-semibold block">Services / Therapies ({activeSlip.services.length}):</span>
+                    {activeSlip.services.map((srv, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-[11px]">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {idx + 1}. {srv.name} {srv.duration ? `(${srv.duration})` : ''}
+                        </span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          ₹{srv.price || srv.fee || 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : activeSlip.serviceName ? (
                   <div className="flex justify-between items-center py-1 border-t border-b border-dashed border-amber-300/60 dark:border-slate-700 my-1">
                     <span className="text-slate-500 text-[11px] font-semibold">Service / Karma:</span>
                     <span className="font-bold text-emerald-700 dark:text-emerald-400 text-right text-xs">
                       {activeSlip.serviceName} {activeSlip.serviceDuration ? `(${activeSlip.serviceDuration})` : ''}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="flex justify-between">
                   <span className="text-slate-400">Category:</span>
                   <span className="font-medium">{activeSlip.serviceCategory || activeSlip.appointmentType || 'Consultation'}</span>

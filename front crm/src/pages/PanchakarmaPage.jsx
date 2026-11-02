@@ -67,12 +67,15 @@ export default function PanchakarmaPage() {
     doctorName: 'Dr. Arya Warrier (BAMS, MD)',
     therapistName: 'Rahul K. (Male Therapist)',
     therapistGender: 'Male',
+    selectedTherapies: [
+      { name: 'Janu Basti (Medicated Oil Retention on Knee)', price: 1200, fee: 1200, duration: '45 mins', category: 'Panchakarma Therapy' }
+    ],
     therapyName: 'Janu Basti (Medicated Oil Retention on Knee)',
     serviceId: '',
     roomOrDroni: 'Panchakarma Suite 1 (Droni A)',
     totalSessions: 7,
     timeSlot: '08:00 AM - 09:15 AM',
-    packageCost: 7500,
+    packageCost: 8400,
     medicatedOilOrKashayam: 'Mahanarayana Thailam & Ksheerabala 101',
     purvaKarmaNotes: 'Pre-check: BP, pulse. Local Snehana & Nadi Swedana.',
     pradhanaKarmaNotes: 'Main procedure administered with prescribed temperature retention.',
@@ -139,6 +142,50 @@ export default function PanchakarmaPage() {
     }
   };
 
+  const handleAddTherapyToPackage = (therapyObj) => {
+    if (!therapyObj || !therapyObj.name) return;
+    const current = formData.selectedTherapies || [];
+    if (current.some(t => t.name.toLowerCase() === therapyObj.name.toLowerCase())) {
+      return; // Already in selection
+    }
+    const updated = [...current, {
+      name: therapyObj.name,
+      price: Number(therapyObj.price || therapyObj.fee) || 1200,
+      fee: Number(therapyObj.price || therapyObj.fee) || 1200,
+      duration: therapyObj.duration || '45 mins',
+      category: therapyObj.category || 'Panchakarma Therapy',
+      serviceId: therapyObj._id || therapyObj.serviceId || ''
+    }];
+    const combinedName = updated.map(t => t.name).join(' + ');
+    const perSession = updated.reduce((sum, t) => sum + (Number(t.price || t.fee) || 0), 0);
+    const newCost = perSession * (formData.totalSessions || 1);
+    setFormData(prev => ({
+      ...prev,
+      selectedTherapies: updated,
+      therapyName: combinedName,
+      packageCost: newCost,
+      pradhanaKarmaNotes: therapyObj.description ? `${prev.pradhanaKarmaNotes ? prev.pradhanaKarmaNotes + ' | ' : ''}${therapyObj.description}` : prev.pradhanaKarmaNotes
+    }));
+  };
+
+  const handleRemoveTherapyFromPackage = (indexToRemove) => {
+    const current = formData.selectedTherapies || [];
+    if (current.length <= 1) {
+      alert('At least one therapy procedure must be selected for a Panchakarma booking.');
+      return;
+    }
+    const updated = current.filter((_, idx) => idx !== indexToRemove);
+    const combinedName = updated.map(t => t.name).join(' + ');
+    const perSession = updated.reduce((sum, t) => sum + (Number(t.price || t.fee) || 0), 0);
+    const newCost = perSession * (formData.totalSessions || 1);
+    setFormData(prev => ({
+      ...prev,
+      selectedTherapies: updated,
+      therapyName: combinedName,
+      packageCost: newCost
+    }));
+  };
+
   const handleCreateBooking = async (e) => {
     e.preventDefault();
     if (!formData.patient) {
@@ -147,11 +194,22 @@ export default function PanchakarmaPage() {
     }
 
     try {
+      const therapiesPayload = (formData.selectedTherapies && formData.selectedTherapies.length > 0)
+        ? formData.selectedTherapies
+        : [{ name: formData.therapyName, price: formData.packageCost / (formData.totalSessions || 1), duration: '45 mins' }];
+
+      const combinedName = therapiesPayload.map(t => t.name).join(' + ');
+      const payload = {
+        ...formData,
+        therapies: therapiesPayload,
+        therapyName: combinedName || formData.therapyName
+      };
+
       let res;
       if (editingBookingId) {
-        res = await polyclinicService.updatePanchakarmaBooking(editingBookingId, formData);
+        res = await polyclinicService.updatePanchakarmaBooking(editingBookingId, payload);
       } else {
-        res = await polyclinicService.createPanchakarmaBooking(formData);
+        res = await polyclinicService.createPanchakarmaBooking(payload);
       }
 
       if (res.success) {
@@ -163,8 +221,8 @@ export default function PanchakarmaPage() {
           isOpen: true,
           title: wasEditing ? 'Therapy Package Updated' : 'Panchakarma Package Booked',
           message: wasEditing
-            ? `Therapy package "${formData.therapyName}" updated successfully.`
-            : `Therapy package "${formData.therapyName}" (${formData.totalSessions} sessions) created for ${formData.patientName}.`,
+            ? `Therapy package "${combinedName}" updated successfully.`
+            : `Therapy package "${combinedName}" (${formData.totalSessions} sessions) created for ${formData.patientName}.`,
           confirmText: 'Done',
           variant: 'success',
           onConfirm: () => {}
@@ -177,6 +235,32 @@ export default function PanchakarmaPage() {
 
   const handleOpenEditBooking = (b) => {
     setEditingBookingId(b._id);
+
+    let initialTherapies = [];
+    if (Array.isArray(b.therapies) && b.therapies.length > 0) {
+      initialTherapies = b.therapies.map(t => ({
+        name: t.name,
+        price: t.price || t.fee || 1200,
+        fee: t.price || t.fee || 1200,
+        duration: t.duration || '45 mins',
+        category: t.category || 'Panchakarma Therapy',
+        serviceId: t.serviceId || ''
+      }));
+    } else if (b.therapyName) {
+      const parts = b.therapyName.split(' + ');
+      initialTherapies = parts.map(name => {
+        const found = services.find(s => s.name === name) || THERAPY_OPTIONS.find(t => t.name === name);
+        return {
+          name,
+          price: found?.price || found?.fee || 1200,
+          fee: found?.price || found?.fee || 1200,
+          duration: found?.duration || '45 mins',
+          category: found?.category || 'Panchakarma Therapy',
+          serviceId: found?._id || ''
+        };
+      });
+    }
+
     setFormData({
       patient: b.patient?._id || b.patient || '',
       patientName: b.patientName || '',
@@ -184,7 +268,10 @@ export default function PanchakarmaPage() {
       doctorName: b.doctorName || 'Dr. Arya Warrier (BAMS, MD)',
       therapistName: b.therapistName || 'Rahul K. (Male Therapist)',
       therapistGender: b.therapistGender || 'Male',
-      therapyName: b.therapyName || 'Janu Basti (Medicated Oil Retention on Knee)',
+      selectedTherapies: initialTherapies.length > 0 ? initialTherapies : [
+        { name: b.therapyName || 'Abhyanga & Swedana', price: 1200, fee: 1200, duration: '60 mins', category: 'Panchakarma Therapy' }
+      ],
+      therapyName: b.therapyName || 'Abhyanga & Swedana',
       serviceId: b.serviceId || '',
       roomOrDroni: b.roomOrDroni || 'Panchakarma Suite 1 (Droni A)',
       totalSessions: b.totalSessions || 7,
@@ -278,7 +365,31 @@ export default function PanchakarmaPage() {
         </div>
 
         <button
-          onClick={() => setShowBookingModal(true)}
+          onClick={() => {
+            setEditingBookingId(null);
+            setFormData({
+              patient: '',
+              patientName: '',
+              patientPhone: '',
+              doctorName: 'Dr. Arya Warrier (BAMS, MD)',
+              therapistName: 'Rahul K. (Male Therapist)',
+              therapistGender: 'Male',
+              selectedTherapies: [
+                { name: 'Janu Basti (Medicated Oil Retention on Knee)', price: 1200, fee: 1200, duration: '45 mins', category: 'Panchakarma Therapy' }
+              ],
+              therapyName: 'Janu Basti (Medicated Oil Retention on Knee)',
+              serviceId: '',
+              roomOrDroni: 'Panchakarma Suite 1 (Droni A)',
+              totalSessions: 7,
+              timeSlot: '08:00 AM - 09:15 AM',
+              packageCost: 8400,
+              medicatedOilOrKashayam: 'Mahanarayana Thailam & Ksheerabala 101',
+              purvaKarmaNotes: 'Pre-check: BP, pulse. Local Snehana & Nadi Swedana.',
+              pradhanaKarmaNotes: 'Main procedure administered with prescribed temperature retention.',
+              paschatKarmaNotes: 'Rest 15 mins, lukewarm water wash, avoid cold exposure.'
+            });
+            setShowBookingModal(true);
+          }}
           className="relative z-10 inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2.5 rounded-2xl shadow-lg transition text-xs whitespace-nowrap self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" /> Book Therapy Package
@@ -657,75 +768,135 @@ export default function PanchakarmaPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="block font-semibold text-slate-700 dark:text-slate-300">
-                    Therapy Procedure / Service *
+                    Therapy Procedures Included *
                   </label>
-                  <span className="text-[10px] text-slate-400">Auto-sets package price &amp; duration</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {(formData.selectedTherapies || []).length} { (formData.selectedTherapies || []).length === 1 ? 'Therapy Selected' : 'Therapies Selected' }
+                  </span>
                 </div>
+
+                {/* Selected Therapies Cards */}
+                {(formData.selectedTherapies && formData.selectedTherapies.length > 0) && (
+                  <div className="space-y-1.5 mb-2.5 max-h-48 overflow-y-auto pr-1">
+                    {formData.selectedTherapies.map((t, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded-xl border bg-slate-50/90 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 transition shadow-xs"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <div className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 truncate text-xs">
+                              {t.name}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span className="flex items-center gap-0.5">
+                                <Clock className="w-2.5 h-2.5 text-slate-400" /> {t.duration || '45 mins'}
+                              </span>
+                              {t.category && (
+                                <span className="px-1.5 py-0.2 rounded bg-slate-200/60 dark:bg-slate-800 text-[9px] text-slate-600 dark:text-slate-300">
+                                  {t.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                            ₹{t.price || t.fee || 0}/day
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTherapyFromPackage(idx)}
+                            title="Remove therapy procedure"
+                            className="w-5 h-5 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Another Therapy Dropdown */}
                 <select
-                  value={formData.therapyName}
+                  value=""
                   onChange={(e) => {
                     const val = e.target.value;
+                    if (!val) return;
                     const matchedService = services.find(s => s.name === val || s._id === val);
                     if (matchedService) {
-                      setFormData(prev => ({
-                        ...prev,
-                        therapyName: matchedService.name,
-                        serviceId: matchedService._id,
-                        packageCost: matchedService.price * (prev.totalSessions || 1),
-                        pradhanaKarmaNotes: matchedService.description || prev.pradhanaKarmaNotes
-                      }));
+                      handleAddTherapyToPackage(matchedService);
                     } else {
                       const matchedTrad = THERAPY_OPTIONS.find(t => t.name === val);
-                      setFormData(prev => ({
-                        ...prev,
-                        therapyName: val,
-                        serviceId: '',
-                        packageCost: (matchedTrad?.fee || 1200) * (prev.totalSessions || 1),
-                        duration: matchedTrad?.duration || prev.duration
-                      }));
+                      if (matchedTrad) {
+                        handleAddTherapyToPackage(matchedTrad);
+                      }
                     }
                   }}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-dashed border-emerald-400/60 dark:border-emerald-500/40 rounded-xl focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-200 font-semibold"
                 >
+                  <option value="">➕ Add another therapy to this package...</option>
                   {services.length > 0 && (
-                    <optgroup label="✨ Clinic Catalog Services (Official Pricing & Duration)">
-                      {services.map(s => (
-                        <option key={s._id} value={s.name}>
-                          {s.name} — ₹{s.price} ({s.duration}) [{s.category}]
-                        </option>
-                      ))}
+                    <optgroup label="✨ Clinic Catalog Services">
+                      {services.map(s => {
+                        const isSelected = (formData.selectedTherapies || []).some(t => t.name.toLowerCase() === s.name.toLowerCase());
+                        return (
+                          <option key={s._id} value={s.name} disabled={isSelected}>
+                            {isSelected ? '✓ ' : ''}{s.name} — ₹{s.price} ({s.duration}) [{s.category}]
+                          </option>
+                        );
+                      })}
                     </optgroup>
                   )}
                   <optgroup label="🌿 Traditional Classical Panchakarma Procedures">
-                    {THERAPY_OPTIONS.map(opt => (
-                      <option key={opt.name} value={opt.name}>
-                        {opt.name} — ₹{opt.fee} ({opt.duration})
-                      </option>
-                    ))}
+                    {THERAPY_OPTIONS.map(opt => {
+                      const isSelected = (formData.selectedTherapies || []).some(t => t.name.toLowerCase() === opt.name.toLowerCase());
+                      return (
+                        <option key={opt.name} value={opt.name} disabled={isSelected}>
+                          {isSelected ? '✓ ' : ''}{opt.name} — ₹{opt.fee} ({opt.duration})
+                        </option>
+                      );
+                    })}
                   </optgroup>
                 </select>
 
-                {(() => {
-                  const s = services.find(x => x.name === formData.therapyName || x._id === formData.serviceId);
-                  return s ? (
-                    <div className="mt-1.5 flex items-center justify-between text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-500/20">
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span>{s.category}</span>
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                          <Clock className="w-3 h-3" /> {s.duration}
-                        </span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                          ₹{s.price}/session
-                        </span>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
+                {/* Quick Add Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-2">
+                  <span className="text-[10px] text-slate-400 font-medium mr-0.5">Quick Add:</span>
+                  {[
+                    'Shirodhara (Continuous Medicated Oil Pouring)',
+                    'Abhyanga & Swedana (Herbal Oil Massage & Steam)',
+                    'Janu Basti (Medicated Oil Retention on Knee)',
+                    'Kati Basti (Medicated Oil Retention on Lower Back)',
+                    'Elakizhi (Herbal Leaf Bolus Bag)',
+                    'Njavarakizhi (Shashtika Shali Pinda Sweda)',
+                    'Nasya Karma (Nasal Errhine Therapy)'
+                  ].map(quickName => {
+                    const isAdded = (formData.selectedTherapies || []).some(t => t.name === quickName);
+                    if (isAdded) return null;
+                    const shortTitle = quickName.split(' (')[0];
+                    return (
+                      <button
+                        key={quickName}
+                        type="button"
+                        onClick={() => {
+                          const matched = services.find(s => s.name === quickName) || THERAPY_OPTIONS.find(t => t.name === quickName);
+                          if (matched) handleAddTherapyToPackage(matched);
+                          else handleAddTherapyToPackage({ name: quickName, price: 1200, fee: 1200, duration: '45 mins' });
+                        }}
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition flex items-center gap-1"
+                      >
+                        <Plus className="w-2.5 h-2.5" /> {shortTitle}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -738,23 +909,31 @@ export default function PanchakarmaPage() {
                     value={formData.totalSessions}
                     onChange={(e) => {
                       const newSessions = Number(e.target.value) || 1;
-                      const s = services.find(x => x.name === formData.therapyName || x._id === formData.serviceId);
+                      const perSession = (formData.selectedTherapies || []).reduce((sum, t) => sum + (Number(t.price || t.fee) || 0), 0);
                       setFormData(prev => ({
                         ...prev,
                         totalSessions: newSessions,
-                        packageCost: s ? (s.price * newSessions) : prev.packageCost
+                        packageCost: perSession > 0 ? (perSession * newSessions) : prev.packageCost
                       }));
                     }}
                     className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Package Cost (₹)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300">Package Cost (₹)</label>
+                    {(() => {
+                      const perSession = (formData.selectedTherapies || []).reduce((sum, t) => sum + (Number(t.price || t.fee) || 0), 0);
+                      return perSession > 0 ? (
+                        <span className="text-[10px] text-slate-400 font-mono">₹{perSession}/day × {formData.totalSessions}d</span>
+                      ) : null;
+                    })()}
+                  </div>
                   <input
                     type="number"
                     value={formData.packageCost}
                     onChange={(e) => setFormData({ ...formData, packageCost: Number(e.target.value) })}
-                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono font-bold"
                   />
                 </div>
               </div>
@@ -930,6 +1109,16 @@ export default function PanchakarmaPage() {
                   Panchakarma Protocol: {viewDetailsBooking.bookingNo}
                 </h3>
                 <p className="text-xs text-slate-500">{viewDetailsBooking.patientName} • {viewDetailsBooking.therapyName}</p>
+                {viewDetailsBooking.therapies && viewDetailsBooking.therapies.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {viewDetailsBooking.therapies.map((th, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-medium">
+                        <Sparkles className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+                        {th.name} {th.duration ? `(${th.duration})` : ''} — ₹{th.price || th.fee}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <button onClick={() => setViewDetailsBooking(null)} className="text-slate-400">
                 <X className="w-5 h-5" />
